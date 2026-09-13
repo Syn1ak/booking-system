@@ -44,6 +44,8 @@ graded on judgement, not only on working code.
 ```
 docker compose up -d  # local SQL Server on 1433; first run pulls the image
 docker compose down   # stop it; add -v to discard the data volume
+dotnet tool restore   # once per clone; pins dotnet-ef
+dotnet ef database update --project src/BookingSystem.Api
 dotnet build          # from the repository root
 dotnet run --project src/BookingSystem.Api
 ```

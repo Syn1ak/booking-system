@@ -31,10 +31,21 @@ not used in any deployed environment.
 On Apple Silicon this works without extra setup: the image is amd64-only, but Docker Desktop
 runs it under Rosetta.
 
+Restore the local tools and apply migrations:
+
+```bash
+dotnet tool restore
+dotnet ef database update --project src/BookingSystem.Api
+```
+
 Then run the API:
 
 ```bash
 dotnet run --project src/BookingSystem.Api
 ```
+
+The development connection string in `appsettings.Development.json` points at the Compose
+database above and carries its local-only password. If you override `MSSQL_SA_PASSWORD`,
+override the connection string too via the `ConnectionStrings__Default` environment variable.
 
 To stop the database, `docker compose down` — add `-v` to discard the data volume as well.
