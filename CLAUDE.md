@@ -42,8 +42,10 @@ graded on judgement, not only on working code.
 ## Commands
 
 ```
+docker compose up -d  # local SQL Server on 1433; first run pulls the image
+docker compose down   # stop it; add -v to discard the data volume
 dotnet build          # from the repository root
 dotnet run --project src/BookingSystem.Api
 ```
 
-Database and test commands land with the steps that introduce them.
+Test commands land with the step that introduces them.
