@@ -1,0 +1,49 @@
+# CLAUDE.md
+
+## What this is
+
+A meeting room booking system. Users view rooms and their bookable time slots and reserve
+free ones; admins additionally manage rooms and see every user's bookings. Backend is
+ASP.NET Core on .NET 10 with Azure SQL; the frontend is a single-page app served from the
+same origin; booking changes are pushed to connected viewers over Azure SignalR.
+
+The graded centrepiece is **concurrency**: when several requests target the same slot at the
+same moment, exactly one must succeed and the rest must receive a clear conflict response —
+never a silent overwrite, never a server error. Design decisions are weighted accordingly.
+
+## Where the decisions are recorded
+
+Read the relevant file before changing code in that area. Each records what was chosen, why,
+and what was rejected — so decisions are not re-derived or quietly reversed.
+
+| Area | File |
+|---|---|
+| Code organisation, layering, data access | [.claude/architecture.md](.claude/architecture.md) |
+| Authentication, roles, authorization | [.claude/auth.md](.claude/auth.md) |
+| Slot model and concurrency control | *not yet decided* |
+| Real-time updates | *not yet decided* |
+
+If a change contradicts one of these, update the file in the same commit. A decision file
+that disagrees with the code is worse than no file.
+
+## Conventions
+
+**Commits are atomic.** One coherent change per commit, and each leaves the repository
+building. The message gives a short subject, then *what changed and why* — the why matters
+more, since the what is visible in the diff.
+
+**Rationale lives in commit messages and decision files, not in comments.** A comment earns
+its place only when it says something the code cannot: an opaque constant, a non-obvious
+constraint, a gotcha that already cost time. Do not comment self-describing code.
+
+**Decide before implementing.** Where a design choice is open, record it first. This is
+graded on judgement, not only on working code.
+
+## Commands
+
+```
+dotnet build          # from the repository root
+dotnet run --project src/BookingSystem.Api
+```
+
+Database and test commands land with the steps that introduce them.
