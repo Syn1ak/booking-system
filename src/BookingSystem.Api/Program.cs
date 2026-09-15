@@ -1,4 +1,5 @@
 using BookingSystem.Api.Authentication;
+using BookingSystem.Api.Authorization;
 using BookingSystem.Api.Common;
 using BookingSystem.Api.Data;
 using FluentValidation;
@@ -11,6 +12,7 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddApplicationIdentity();
+builder.Services.AddApplicationAuthorization();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
