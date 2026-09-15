@@ -48,4 +48,17 @@ The development connection string in `appsettings.Development.json` points at th
 database above and carries its local-only password. If you override `MSSQL_SA_PASSWORD`,
 override the connection string too via the `ConnectionStrings__Default` environment variable.
 
+### Demo accounts
+
+A fresh database is seeded with two accounts, both development-only:
+
+| Email | Password | Role |
+|---|---|---|
+| `admin@example.com` | `Admin123!` | Admin |
+| `user@example.com` | `User123!` | User |
+
+They come from the `Seed:Users` section of `appsettings.Development.json`. An environment
+that configures no seed users - production, unless it opts in - creates none. Existing
+accounts are never modified, so re-running the app cannot reset a changed password.
+
 To stop the database, `docker compose down` — add `-v` to discard the data volume as well.
