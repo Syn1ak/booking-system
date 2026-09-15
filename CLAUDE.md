@@ -18,9 +18,10 @@ and what was rejected — so decisions are not re-derived or quietly reversed.
 
 | Area | File |
 |---|---|
-| Code organisation, layering, data access | [.claude/architecture.md](.claude/architecture.md) |
-| Authentication, roles, authorization | [.claude/auth.md](.claude/auth.md) |
-| Slot model and concurrency control | *not yet decided* |
+| Code organisation, layering, data access | [.claude/architecture/architecture.md](.claude/architecture/architecture.md) |
+| Authentication, roles, authorization | [.claude/auth/auth.md](.claude/auth/auth.md) |
+| Slot model | [.claude/scheduling/scheduling.md](.claude/scheduling/scheduling.md) |
+| Concurrency control | *not yet decided* |
 | Real-time updates | *not yet decided* |
 
 If a change contradicts one of these, update the file in the same commit. A decision file
