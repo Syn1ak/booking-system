@@ -61,4 +61,14 @@ They come from the `Seed:Users` section of `appsettings.Development.json`. An en
 that configures no seed users - production, unless it opts in - creates none. Existing
 accounts are never modified, so re-running the app cannot reset a changed password.
 
+## Tests
+
+```bash
+dotnet test
+```
+
+Integration tests boot the real application against a throwaway SQL Server container
+started by Testcontainers, apply migrations to it, and discard it afterwards. Docker must
+be running; nothing else needs setting up, and the Compose database above is untouched.
+
 To stop the database, `docker compose down` — add `-v` to discard the data volume as well.

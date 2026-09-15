@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BookingSystem.Api.Authentication;
@@ -18,14 +19,18 @@ public static class AuthenticationServiceCollectionExtensions
 
         services.AddSingleton<TokenService>();
 
-        var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
-                  ?? throw new InvalidOperationException(
-                      $"Configuration section '{JwtOptions.SectionName}' is missing.");
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+        // Configured from JwtOptions rather than read from IConfiguration here, so the
+        // values are resolved when the handler is first used instead of when this method
+        // runs. Reading configuration eagerly at registration ignores any source added
+        // afterwards - which is exactly what the integration test host does.
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>>((bearer, jwtOptions) =>
             {
-                options.TokenValidationParameters = new TokenValidationParameters
+                var jwt = jwtOptions.Value;
+
+                bearer.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidIssuer = jwt.Issuer,

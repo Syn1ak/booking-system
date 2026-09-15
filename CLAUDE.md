@@ -48,6 +48,8 @@ dotnet tool restore   # once per clone; pins dotnet-ef
 dotnet ef database update --project src/BookingSystem.Api
 dotnet build          # from the repository root
 dotnet run --project src/BookingSystem.Api
+dotnet test           # integration tests; needs Docker, starts its own SQL Server
 ```
 
-Test commands land with the step that introduces them.
+Integration tests run against a throwaway SQL Server container via Testcontainers, not
+against the Compose database - so they never read or write local development data.
