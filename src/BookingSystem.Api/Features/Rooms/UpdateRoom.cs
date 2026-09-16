@@ -92,15 +92,19 @@ public sealed class UpdateRoom : IEndpoint
         // rows under unchanged hours is a schedule wiped by a request that reported failure.
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
 
-        // Future rows only, and nothing is regenerated - the next read rebuilds from the new
-        // rules. Slots already started or past stay as they are.
+        // Future rows only, unclaimed only, and nothing is regenerated - the next read rebuilds
+        // from the new rules. Slots already started, and slots somebody has booked, keep their
+        // rows and keep displaying, so the schedule shows the old and new grids side by side
+        // until those bookings pass or are cancelled.
         //
-        // When bookings exist this must spare the booked ones. Until then the backstop is the
-        // restricting foreign key: a forgotten predicate fails the request loudly rather than
-        // deleting someone's meeting.
+        // Dropping the claim check does not corrupt anything - the restricting foreign key from
+        // Bookings fails the delete instead - but it turns an hours change into a 500 for any
+        // room with a future booking.
         var now = clock.GetUtcNow().UtcDateTime;
         await database.Slots
-            .Where(slot => slot.RoomId == room.Id && slot.StartsAtUtc > now)
+            .Where(slot => slot.RoomId == room.Id
+                           && slot.StartsAtUtc > now
+                           && slot.CurrentBookingId == null)
             .ExecuteDeleteAsync(cancellationToken);
 
         await database.SaveChangesAsync(cancellationToken);
