@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BookingSystem.Api.Features.Auth;
 
@@ -32,5 +33,15 @@ internal static class AuthApi
         (await client.RegisterAsync(email)).EnsureSuccessStatusCode();
 
         return (await client.LoginSucceedsAsync(email)).Token;
+    }
+
+    /// <summary>A client carrying a bearer token for a freshly registered regular user.</summary>
+    public static async Task<HttpClient> CreateUserClientAsync(this ApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        var token = await client.RegisterAndGetTokenAsync(TestData.NewEmail());
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return client;
     }
 }

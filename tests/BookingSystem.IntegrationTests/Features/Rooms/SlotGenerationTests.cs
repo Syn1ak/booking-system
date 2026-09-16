@@ -16,30 +16,27 @@ namespace BookingSystem.IntegrationTests.Features.Rooms;
 [Collection(ApiCollection.Name)]
 public sealed class SlotGenerationTests(ApiFactory factory)
 {
-    private static readonly TimeOnly Opens = new(9, 0);
-    private static readonly TimeOnly Closes = new(17, 0);
-
     private static DateOnly Today => DateOnly.FromDateTime(DateTime.UtcNow);
 
     [Fact]
     public async Task EnsureSlots_OnAColdDate_MaterialisesTheRoomsGrid()
     {
-        var room = await GivenRoom(slotLengthMinutes: 60);
+        var room = await factory.CreateRoomAsync();
         var date = Today.AddDays(1);
 
         var slots = await EnsureSlots(room, date);
 
         Assert.NotNull(slots);
         Assert.Equal(8, slots.Count);
-        Assert.Equal(date.ToDateTime(Opens), slots[0].StartsAtUtc);
-        Assert.Equal(date.ToDateTime(Closes), slots[^1].EndsAtUtc);
+        Assert.Equal(date.ToDateTime(RoomData.Opens), slots[0].StartsAtUtc);
+        Assert.Equal(date.ToDateTime(RoomData.Closes), slots[^1].EndsAtUtc);
         Assert.All(slots, slot => Assert.Equal(TimeSpan.FromHours(1), slot.EndsAtUtc - slot.StartsAtUtc));
     }
 
     [Fact]
     public async Task EnsureSlots_WhenTheDayDoesNotDivideEvenly_DropsTheTrailingRemainder()
     {
-        var room = await GivenRoom(slotLengthMinutes: 45);
+        var room = await factory.CreateRoomAsync(slotLengthMinutes: 45);
         var date = Today.AddDays(1);
 
         var slots = await EnsureSlots(room, date);
@@ -53,7 +50,7 @@ public sealed class SlotGenerationTests(ApiFactory factory)
     [Fact]
     public async Task EnsureSlots_CalledTwice_InsertsNothingTheSecondTime()
     {
-        var room = await GivenRoom(slotLengthMinutes: 60);
+        var room = await factory.CreateRoomAsync();
         var date = Today.AddDays(2);
 
         var first = await EnsureSlots(room, date);
@@ -62,13 +59,13 @@ public sealed class SlotGenerationTests(ApiFactory factory)
         Assert.NotNull(first);
         Assert.NotNull(second);
         Assert.Equal(first.Select(slot => slot.Id), second.Select(slot => slot.Id));
-        Assert.Equal(8, await CountSlots(room));
+        Assert.Equal(8, await factory.CountSlotsAsync(room));
     }
 
     [Fact]
     public async Task EnsureSlots_CalledConcurrently_LeavesExactlyOneSetOfRows()
     {
-        var room = await GivenRoom(slotLengthMinutes: 60);
+        var room = await factory.CreateRoomAsync();
         var date = Today.AddDays(3);
 
         // LongRunning and the gate are load-bearing: awaited directly, or via Task.Run, xUnit's
@@ -92,13 +89,13 @@ public sealed class SlotGenerationTests(ApiFactory factory)
         var results = await Task.WhenAll(attempts);
 
         Assert.All(results, slots => Assert.Equal(8, Assert.IsAssignableFrom<IReadOnlyList<Slot>>(slots).Count));
-        Assert.Equal(8, await CountSlots(room));
+        Assert.Equal(8, await factory.CountSlotsAsync(room));
     }
 
     [Fact]
     public async Task EnsureSlots_WhenAnotherWriterCommitsFirst_ReturnsTheWinnersRows()
     {
-        var room = await GivenRoom(slotLengthMinutes: 60);
+        var room = await factory.CreateRoomAsync();
         var date = Today.AddDays(4);
 
         // The parallel test can only hope to collide; this one guarantees it.
@@ -106,7 +103,7 @@ public sealed class SlotGenerationTests(ApiFactory factory)
 
         Assert.NotNull(slots);
         Assert.Equal(8, slots.Count);
-        Assert.Equal(8, await CountSlots(room));
+        Assert.Equal(8, await factory.CountSlotsAsync(room));
     }
 
     [Theory]
@@ -114,31 +111,12 @@ public sealed class SlotGenerationTests(ApiFactory factory)
     [InlineData(15)]
     public async Task EnsureSlots_OutsideTheBookingWindow_ReturnsNullAndWritesNothing(int daysFromToday)
     {
-        var room = await GivenRoom(slotLengthMinutes: 60);
+        var room = await factory.CreateRoomAsync();
 
         var slots = await EnsureSlots(room, Today.AddDays(daysFromToday));
 
         Assert.Null(slots);
-        Assert.Equal(0, await CountSlots(room));
-    }
-
-    private async Task<Room> GivenRoom(int slotLengthMinutes)
-    {
-        // A room per test: the assembly shares one database.
-        var room = new Room
-        {
-            Name = $"Test room {Guid.NewGuid():N}",
-            OpensAtUtc = Opens,
-            ClosesAtUtc = Closes,
-            SlotLengthMinutes = slotLengthMinutes,
-        };
-
-        using var scope = factory.Services.CreateScope();
-        var database = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        database.Rooms.Add(room);
-        await database.SaveChangesAsync();
-
-        return room;
+        Assert.Equal(0, await factory.CountSlotsAsync(room));
     }
 
     private async Task<IReadOnlyList<Slot>?> EnsureSlots(Room room, DateOnly date)
@@ -210,14 +188,5 @@ public sealed class SlotGenerationTests(ApiFactory factory)
 
             return result;
         }
-    }
-
-    private async Task<int> CountSlots(Room room)
-    {
-        using var scope = factory.Services.CreateScope();
-
-        return await scope.ServiceProvider
-            .GetRequiredService<AppDbContext>()
-            .Slots.CountAsync(slot => slot.RoomId == room.Id);
     }
 }
