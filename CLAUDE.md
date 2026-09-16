@@ -22,7 +22,7 @@ and what was rejected — so decisions are not re-derived or quietly reversed.
 | Authentication, roles, authorization | [.claude/auth/auth.md](.claude/auth/auth.md) |
 | Slot model | [.claude/scheduling/scheduling.md](.claude/scheduling/scheduling.md) |
 | Concurrency control | [.claude/concurrency/concurrency.md](.claude/concurrency/concurrency.md) |
-| Real-time updates | *not yet decided* |
+| Real-time updates | [.claude/realtime/realtime.md](.claude/realtime/realtime.md) |
 
 If a change contradicts one of these, update the file in the same commit. A decision file
 that disagrees with the code is worse than no file.
