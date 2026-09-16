@@ -34,15 +34,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
             slot.Property(s => s.Version).IsRowVersion();
 
-            // A token as well as a column. EF sends a token's original value in the update's
-            // WHERE clause, so the write requires the slot to have been free. The rowversion
-            // alone would not: it detects changes since the read, and a slot that was already
-            // claimed when it was read has not changed, so the claim would overwrite a live
-            // booking. See .claude/concurrency/concurrency.md.
+            // A token too, so the update's WHERE requires the slot to have been free. The
+            // rowversion alone would not: a slot already claimed when it was read has not
+            // changed, so the claim would overwrite a live booking.
             slot.Property(s => s.CurrentBookingId).IsConcurrencyToken();
 
-            // NoAction because this closes a reference cycle with the booking's slot key
-            // below, and nothing deletes either row.
+            // NoAction: this closes a reference cycle with the booking's slot key below.
             slot.HasOne<Booking>()
                 .WithMany()
                 .HasForeignKey(s => s.CurrentBookingId)
@@ -61,14 +58,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             booking.Property(b => b.Version).IsRowVersion();
 
-            // A backstop, not the mechanism. The slot's concurrency token is what turns a lost
-            // race into a conflict response; this index exists so that a code path bypassing
-            // the claim fails instead of double-booking. That is also why a violation here is
-            // never translated into a conflict: the caller did not lose a race, the system is
-            // wrong, and it should say so.
-            //
-            // Filtered, because cancelling preserves the row: a slot may carry any number of
-            // cancelled bookings and at most one live one.
+            // A backstop, not the mechanism: it catches a code path that bypasses the claim, so
+            // a violation here is a bug and is never turned into a conflict. Filtered because
+            // cancelling keeps the row - a slot may carry many cancelled bookings and one live
+            // one.
             booking.HasIndex(b => b.SlotId)
                    .IsUnique()
                    .HasFilter("[CancelledAtUtc] IS NULL");
