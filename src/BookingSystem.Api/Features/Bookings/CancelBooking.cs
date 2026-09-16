@@ -2,6 +2,7 @@ using System.Security.Claims;
 using BookingSystem.Api.Authorization;
 using BookingSystem.Api.Common;
 using BookingSystem.Api.Data;
+using BookingSystem.Api.RealTime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,18 +25,20 @@ public sealed class CancelBooking : IEndpoint
         ClaimsPrincipal principal,
         AppDbContext database,
         IAuthorizationService authorization,
+        ScheduleNotifier notifier,
         TimeProvider clock,
         CancellationToken cancellationToken) =>
         database.Database
             .CreateExecutionStrategy()
             .ExecuteAsync(() => AttemptAsync(
-                bookingId, principal, database, authorization, clock, cancellationToken));
+                bookingId, principal, database, authorization, notifier, clock, cancellationToken));
 
     private static async Task<IResult> AttemptAsync(
         Guid bookingId,
         ClaimsPrincipal principal,
         AppDbContext database,
         IAuthorizationService authorization,
+        ScheduleNotifier notifier,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
@@ -62,12 +65,12 @@ public sealed class CancelBooking : IEndpoint
             return Results.NoContent();
         }
 
-        var startsAtUtc = await database.Slots
-            .Where(slot => slot.Id == booking.SlotId)
-            .Select(slot => slot.StartsAtUtc)
+        var slot = await database.Slots
+            .Where(candidate => candidate.Id == booking.SlotId)
+            .Select(candidate => new { candidate.RoomId, candidate.StartsAtUtc })
             .SingleAsync(cancellationToken);
 
-        if (startsAtUtc <= clock.GetUtcNow().UtcDateTime)
+        if (slot.StartsAtUtc <= clock.GetUtcNow().UtcDateTime)
         {
             return Results.Problem(
                 title: "Slot has already started",
@@ -99,13 +102,27 @@ public sealed class CancelBooking : IEndpoint
         // clear somebody else's claim. The checks above happen to rule that out today; this
         // predicate is what makes the write correct on its own, the way the claim's tokens are
         // what make booking correct rather than the checks that precede them.
-        await database.Slots
-            .Where(slot => slot.Id == booking.SlotId && slot.CurrentBookingId == booking.Id)
+        var released = await database.Slots
+            .Where(candidate => candidate.Id == booking.SlotId && candidate.CurrentBookingId == booking.Id)
             .ExecuteUpdateAsync(
-                setters => setters.SetProperty(slot => slot.CurrentBookingId, (Guid?)null),
+                setters => setters.SetProperty(candidate => candidate.CurrentBookingId, (Guid?)null),
                 cancellationToken);
 
+        // ExecuteUpdate does not return the new rowversion, so it is read before the commit.
+        var sequence = released == 0
+            ? (long?)null
+            : RowVersion.ToSequence(await database.Slots
+                .Where(candidate => candidate.Id == booking.SlotId)
+                .Select(candidate => candidate.Version)
+                .SingleAsync(cancellationToken));
+
         await transaction.CommitAsync(cancellationToken);
+
+        if (sequence is { } freed)
+        {
+            await notifier.SlotChangedAsync(new SlotChange(
+                slot.RoomId, booking.SlotId, slot.StartsAtUtc, IsBooked: false, freed));
+        }
 
         return Results.NoContent();
     }

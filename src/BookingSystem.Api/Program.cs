@@ -36,6 +36,7 @@ if (!string.IsNullOrWhiteSpace(azureSignalR))
     signalR.AddAzureSignalR(azureSignalR);
 }
 
+builder.Services.AddSingleton<ScheduleNotifier>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<SlotGenerator>();
 

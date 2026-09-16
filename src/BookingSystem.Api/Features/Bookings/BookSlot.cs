@@ -2,6 +2,7 @@ using System.Security.Claims;
 using BookingSystem.Api.Common;
 using BookingSystem.Api.Data;
 using BookingSystem.Api.Domain;
+using BookingSystem.Api.RealTime;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.Api.Features.Bookings;
@@ -37,13 +38,15 @@ public sealed class BookSlot : IEndpoint
         Request request,
         ClaimsPrincipal principal,
         AppDbContext database,
+        ScheduleNotifier notifier,
         TimeProvider clock,
         CancellationToken cancellationToken) =>
         // The claim and the booking row share a transaction, and a retrying provider refuses a
         // transaction it did not start itself.
         database.Database
             .CreateExecutionStrategy()
-            .ExecuteAsync(() => AttemptAsync(request, principal, database, clock, cancellationToken));
+            .ExecuteAsync(() => AttemptAsync(
+                request, principal, database, notifier, clock, cancellationToken));
 
     /// <summary>
     /// One attempt. A transient failure re-runs this from the top, so it re-reads the slot
@@ -53,6 +56,7 @@ public sealed class BookSlot : IEndpoint
         Request request,
         ClaimsPrincipal principal,
         AppDbContext database,
+        ScheduleNotifier notifier,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
@@ -130,8 +134,13 @@ public sealed class BookSlot : IEndpoint
         await database.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        var response = ToResponse(booking, slot);
+
+        await notifier.SlotChangedAsync(new SlotChange(
+            slot.RoomId, slot.Id, slot.StartsAtUtc, IsBooked: true, response.Sequence));
+
         // No Location: a booking has no single-resource route.
-        return Results.Json(ToResponse(booking, slot), statusCode: StatusCodes.Status201Created);
+        return Results.Json(response, statusCode: StatusCodes.Status201Created);
     }
 
     /// <summary>
