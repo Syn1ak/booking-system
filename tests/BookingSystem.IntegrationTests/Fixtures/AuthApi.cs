@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using BookingSystem.Api.Authorization;
 using BookingSystem.Api.Domain;
 using BookingSystem.Api.Features.Auth;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -40,7 +41,7 @@ internal static class AuthApi
     }
 
     /// <summary>A client carrying a bearer token for a freshly registered regular user.</summary>
-    public static async Task<HttpClient> CreateUserClientAsync(this ApiFactory factory)
+    public static async Task<HttpClient> CreateUserClientAsync(this WebApplicationFactory<Program> factory)
     {
         var client = factory.CreateClient();
         var token = await client.RegisterAndGetTokenAsync(TestData.NewEmail());
@@ -53,7 +54,7 @@ internal static class AuthApi
     /// A client carrying a bearer token for a freshly registered administrator. The role is
     /// granted through Identity rather than the API, which never promotes anyone.
     /// </summary>
-    public static async Task<HttpClient> CreateAdminClientAsync(this ApiFactory factory)
+    public static async Task<HttpClient> CreateAdminClientAsync(this WebApplicationFactory<Program> factory)
     {
         var client = factory.CreateClient();
         var email = TestData.NewEmail();
