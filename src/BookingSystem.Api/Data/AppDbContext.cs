@@ -14,6 +14,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Booking> Bookings => Set<Booking>();
 
+    /// <summary>A converter registered for a type covers its nullable form too.</summary>
+    protected override void ConfigureConventions(ModelConfigurationBuilder builder) =>
+        builder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
