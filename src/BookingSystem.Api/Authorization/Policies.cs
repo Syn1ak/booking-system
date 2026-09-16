@@ -9,4 +9,10 @@ public static class Policies
 {
     public const string CanManageRooms = "CanManageRooms";
     public const string CanViewAllBookings = "CanViewAllBookings";
+
+    /// <summary>
+    /// Evaluated against a loaded booking, not against the caller alone - see
+    /// <see cref="BookingOwnerHandler"/>.
+    /// </summary>
+    public const string CanCancelBooking = "CanCancelBooking";
 }
