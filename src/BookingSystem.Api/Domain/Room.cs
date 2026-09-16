@@ -7,6 +7,12 @@ namespace BookingSystem.Api.Domain;
 /// </summary>
 public sealed class Room
 {
+    /// <summary>
+    /// Slot lengths a room may use. A fixed set rather than any divisor, so the dropped
+    /// remainder of a day stays something a schedule can explain.
+    /// </summary>
+    public static readonly int[] AllowedSlotLengthMinutes = [15, 30, 60];
+
     public Guid Id { get; set; }
 
     public required string Name { get; set; }
