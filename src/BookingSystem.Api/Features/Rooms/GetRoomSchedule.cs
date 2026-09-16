@@ -14,14 +14,16 @@ public sealed class GetRoomSchedule : IEndpoint
     /// <paramref name="MyBookingId"/> is set only when the caller holds the slot, which also
     /// answers whether the booking is theirs. Whose booking it is otherwise is deliberately
     /// absent: a regular user may not see other users' bookings, and this is the endpoint where
-    /// that would leak by accident.
+    /// that would leak by accident. <paramref name="Sequence"/> orders this snapshot against
+    /// the real-time events that arrive after it.
     /// </summary>
     public sealed record SlotResponse(
         Guid SlotId,
         DateTime StartsAtUtc,
         DateTime EndsAtUtc,
         bool IsBooked,
-        Guid? MyBookingId);
+        Guid? MyBookingId,
+        long Sequence);
 
     public static void Map(IEndpointRouteBuilder app) =>
         app.MapGet("/api/rooms/{roomId:guid}/schedule", Handle)
@@ -75,7 +77,8 @@ public sealed class GetRoomSchedule : IEndpoint
                 slot.StartsAtUtc,
                 slot.EndsAtUtc,
                 slot.CurrentBookingId is not null,
-                slot.CurrentBookingId is { } claim && own.Contains(claim) ? claim : null))]));
+                slot.CurrentBookingId is { } claim && own.Contains(claim) ? claim : null,
+                RowVersion.ToSequence(slot.Version)))]));
     }
 
     /// <summary>

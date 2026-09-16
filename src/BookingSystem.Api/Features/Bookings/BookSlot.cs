@@ -10,13 +10,18 @@ public sealed class BookSlot : IEndpoint
 {
     public sealed record Request(Guid SlotId);
 
+    /// <summary>
+    /// <paramref name="Sequence"/> is the slot's version as this claim left it, so the caller
+    /// can tell its own booking's real-time event from a later one that took the slot away.
+    /// </summary>
     public sealed record Response(
         Guid BookingId,
         Guid SlotId,
         Guid RoomId,
         DateTime StartsAtUtc,
         DateTime EndsAtUtc,
-        DateTime CreatedAtUtc);
+        DateTime CreatedAtUtc,
+        long Sequence);
 
     public static void Map(IEndpointRouteBuilder app) =>
         app.MapPost("/api/bookings", Handle)
@@ -153,5 +158,11 @@ public sealed class BookSlot : IEndpoint
     }
 
     private static Response ToResponse(Booking booking, Slot slot) =>
-        new(booking.Id, slot.Id, slot.RoomId, slot.StartsAtUtc, slot.EndsAtUtc, booking.CreatedAtUtc);
+        new(booking.Id,
+            slot.Id,
+            slot.RoomId,
+            slot.StartsAtUtc,
+            slot.EndsAtUtc,
+            booking.CreatedAtUtc,
+            RowVersion.ToSequence(slot.Version));
 }
