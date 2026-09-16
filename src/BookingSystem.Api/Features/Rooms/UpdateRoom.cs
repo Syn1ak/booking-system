@@ -1,6 +1,7 @@
 using BookingSystem.Api.Authorization;
 using BookingSystem.Api.Common;
 using BookingSystem.Api.Data;
+using BookingSystem.Api.Domain;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,7 +56,7 @@ public sealed class UpdateRoom : IEndpoint
         }
 
         // Checked here rather than in the validator, which cannot see the room's slot length.
-        if (request.ClosesAtUtc - request.OpensAtUtc < TimeSpan.FromMinutes(room.SlotLengthMinutes))
+        if (!Room.FitsAtLeastOneSlot(request.OpensAtUtc, request.ClosesAtUtc, room.SlotLengthMinutes))
         {
             return Results.ValidationProblem(new Dictionary<string, string[]>
             {

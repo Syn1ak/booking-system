@@ -61,6 +61,13 @@ They come from the `Seed:Users` section of `appsettings.Development.json`. An en
 that configures no seed users - production, unless it opts in - creates none. Existing
 accounts are never modified, so re-running the app cannot reset a changed password.
 
+### Demo room
+
+`Seed:Rooms` in the same file creates one room - Board room, 09:00-17:00 UTC, one-hour slots -
+so a fresh database has something to look at. A room of that name is never modified or
+duplicated on later starts. No slots are seeded: they are created when a date's schedule is
+first read.
+
 ## Tests
 
 ```bash

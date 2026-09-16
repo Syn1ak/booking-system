@@ -1,6 +1,7 @@
 using BookingSystem.Api.Authorization;
 using BookingSystem.Api.Domain;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace BookingSystem.Api.Data;
@@ -17,6 +18,7 @@ public static class DatabaseSeeder
 
         await SeedRolesAsync(scope.ServiceProvider);
         await SeedUsersAsync(scope.ServiceProvider);
+        await SeedRoomsAsync(scope.ServiceProvider);
     }
 
     /// <summary>
@@ -80,5 +82,50 @@ public static class DatabaseSeeder
             await users.AddToRoleAsync(user, seed.Role);
             logger.LogInformation("Seeded {Role} account {Email}.", seed.Role, seed.Email);
         }
+    }
+
+    /// <summary>
+    /// Rooms only - no slots. Those materialise when a date is read, so seeding them would be
+    /// a second way to create them and a second place that knows the grid.
+    /// </summary>
+    private static async Task SeedRoomsAsync(IServiceProvider services)
+    {
+        var configured = services.GetRequiredService<IOptions<SeedOptions>>().Value.Rooms;
+        if (configured.Count == 0)
+        {
+            return;
+        }
+
+        var database = services.GetRequiredService<AppDbContext>();
+        var logger = services.GetRequiredService<ILogger<SeedOptions>>();
+
+        foreach (var seed in configured)
+        {
+            if (!Room.AllowedSlotLengthMinutes.Contains(seed.SlotLengthMinutes)
+                || !Room.FitsAtLeastOneSlot(seed.OpensAtUtc, seed.ClosesAtUtc, seed.SlotLengthMinutes))
+            {
+                // A room nobody can book is worse than a failed start, because it looks fine
+                // until someone opens its empty schedule.
+                throw new InvalidOperationException(
+                    $"Seed room '{seed.Name}' has hours or a slot length that produce no slots.");
+            }
+
+            if (await database.Rooms.AnyAsync(room => room.Name == seed.Name))
+            {
+                continue;
+            }
+
+            database.Rooms.Add(new Room
+            {
+                Name = seed.Name,
+                OpensAtUtc = seed.OpensAtUtc,
+                ClosesAtUtc = seed.ClosesAtUtc,
+                SlotLengthMinutes = seed.SlotLengthMinutes,
+            });
+
+            logger.LogInformation("Seeded room {Room}.", seed.Name);
+        }
+
+        await database.SaveChangesAsync();
     }
 }

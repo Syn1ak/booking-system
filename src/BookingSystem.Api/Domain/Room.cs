@@ -32,6 +32,13 @@ public sealed class Room
     public bool IsActive { get; set; } = true;
 
     /// <summary>
+    /// Whether a day of these hours fits at least one slot of this length. A room that fits
+    /// none generates an empty grid on every read and can never be booked.
+    /// </summary>
+    public static bool FitsAtLeastOneSlot(TimeOnly opensAtUtc, TimeOnly closesAtUtc, int slotLengthMinutes) =>
+        closesAtUtc - opensAtUtc >= TimeSpan.FromMinutes(slotLengthMinutes);
+
+    /// <summary>
     /// The slot boundaries this room's rules produce on <paramref name="dateUtc"/>, in order.
     /// The single definition of the grid: slot rows are materialised from this and nothing
     /// else computes a boundary. A day that does not divide evenly drops the remainder.

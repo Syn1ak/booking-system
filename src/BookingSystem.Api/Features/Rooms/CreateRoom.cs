@@ -34,11 +34,9 @@ public sealed class CreateRoom : IEndpoint
             RuleFor(request => request.ClosesAtUtc)
                 .GreaterThan(request => request.OpensAtUtc);
 
-            // A day too short for one slot would generate an empty grid on every read, leaving
-            // a room that exists, lists, and can never be booked.
             RuleFor(request => request)
-                .Must(request => request.ClosesAtUtc - request.OpensAtUtc
-                                 >= TimeSpan.FromMinutes(request.SlotLengthMinutes))
+                .Must(request => Room.FitsAtLeastOneSlot(
+                    request.OpensAtUtc, request.ClosesAtUtc, request.SlotLengthMinutes))
                 .WithMessage("The room's day must be long enough for at least one slot.")
                 .OverridePropertyName(nameof(Request.ClosesAtUtc));
         }

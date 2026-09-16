@@ -11,6 +11,23 @@ public sealed class SeedOptions
     /// that configures nothing - production, unless it opts in - seeds no accounts at all.
     /// </summary>
     public List<SeedUser> Users { get; init; } = [];
+
+    /// <summary>
+    /// Rooms to create if no room of that name exists. Like users, empty by default.
+    /// </summary>
+    public List<SeedRoom> Rooms { get; init; } = [];
+}
+
+public sealed class SeedRoom
+{
+    [Required]
+    public string Name { get; init; } = string.Empty;
+
+    public TimeOnly OpensAtUtc { get; init; }
+
+    public TimeOnly ClosesAtUtc { get; init; }
+
+    public int SlotLengthMinutes { get; init; }
 }
 
 public sealed class SeedUser
