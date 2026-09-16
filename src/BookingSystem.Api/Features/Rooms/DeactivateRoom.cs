@@ -1,6 +1,7 @@
 using BookingSystem.Api.Authorization;
 using BookingSystem.Api.Common;
 using BookingSystem.Api.Data;
+using BookingSystem.Api.RealTime;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.Api.Features.Rooms;
@@ -20,6 +21,7 @@ public sealed class DeactivateRoom : IEndpoint
     private static async Task<IResult> Handle(
         Guid roomId,
         AppDbContext database,
+        ScheduleNotifier notifier,
         CancellationToken cancellationToken)
     {
         // Deactivated rooms are included in the lookup, unlike every other slice: a repeated
@@ -36,6 +38,9 @@ public sealed class DeactivateRoom : IEndpoint
         {
             room.IsActive = false;
             await database.SaveChangesAsync(cancellationToken);
+
+            // Watchers refetch, receive 404 and close the room.
+            await notifier.ScheduleResetAsync(room.Id);
         }
 
         return Results.NoContent();

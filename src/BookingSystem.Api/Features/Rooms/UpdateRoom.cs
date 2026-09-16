@@ -2,6 +2,7 @@ using BookingSystem.Api.Authorization;
 using BookingSystem.Api.Common;
 using BookingSystem.Api.Data;
 using BookingSystem.Api.Domain;
+using BookingSystem.Api.RealTime;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,13 +54,14 @@ public sealed class UpdateRoom : IEndpoint
         Guid roomId,
         Request request,
         AppDbContext database,
+        ScheduleNotifier notifier,
         TimeProvider clock,
         CancellationToken cancellationToken) =>
         // The delete and the hours write share a transaction, and a retrying provider refuses a
         // transaction it did not start itself.
         database.Database
             .CreateExecutionStrategy()
-            .ExecuteAsync(() => AttemptAsync(roomId, request, database, clock, cancellationToken));
+            .ExecuteAsync(() => AttemptAsync(roomId, request, database, notifier, clock, cancellationToken));
 
     /// <summary>
     /// One attempt. A transient failure re-runs this from the top, so it re-reads the room
@@ -69,6 +71,7 @@ public sealed class UpdateRoom : IEndpoint
         Guid roomId,
         Request request,
         AppDbContext database,
+        ScheduleNotifier notifier,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
@@ -131,6 +134,9 @@ public sealed class UpdateRoom : IEndpoint
 
         await database.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        // Unconditional: deleted slot rows span every date, so there is no narrower change to send.
+        await notifier.ScheduleResetAsync(room.Id);
 
         return Results.Ok(new Response(
             room.Id, room.Name, room.OpensAtUtc, room.ClosesAtUtc, room.SlotLengthMinutes));
