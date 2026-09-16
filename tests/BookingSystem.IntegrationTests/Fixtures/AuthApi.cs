@@ -1,6 +1,10 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using BookingSystem.Api.Authorization;
+using BookingSystem.Api.Domain;
 using BookingSystem.Api.Features.Auth;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BookingSystem.IntegrationTests.Fixtures;
 
@@ -40,6 +44,29 @@ internal static class AuthApi
     {
         var client = factory.CreateClient();
         var token = await client.RegisterAndGetTokenAsync(TestData.NewEmail());
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return client;
+    }
+
+    /// <summary>
+    /// A client carrying a bearer token for a freshly registered administrator. The role is
+    /// granted through Identity rather than the API, which never promotes anyone.
+    /// </summary>
+    public static async Task<HttpClient> CreateAdminClientAsync(this ApiFactory factory)
+    {
+        var client = factory.CreateClient();
+        var email = TestData.NewEmail();
+        (await client.RegisterAsync(email)).EnsureSuccessStatusCode();
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            await users.AddToRoleAsync((await users.FindByEmailAsync(email))!, Roles.Admin);
+        }
+
+        // Minted after the grant: roles are claims in the token, not read per request.
+        var token = (await client.LoginSucceedsAsync(email)).Token;
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         return client;

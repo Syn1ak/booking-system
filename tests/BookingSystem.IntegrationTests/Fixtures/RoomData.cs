@@ -40,6 +40,33 @@ internal static class RoomData
         return room;
     }
 
+    /// <summary>Writes one slot row directly, for times a schedule read cannot generate.</summary>
+    public static async Task<Slot> AddSlotAsync(this ApiFactory factory, Room room, DateTime startsAtUtc)
+    {
+        var slot = new Slot
+        {
+            RoomId = room.Id,
+            StartsAtUtc = startsAtUtc,
+            EndsAtUtc = startsAtUtc.AddMinutes(room.SlotLengthMinutes),
+        };
+
+        using var scope = factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        database.Slots.Add(slot);
+        await database.SaveChangesAsync();
+
+        return slot;
+    }
+
+    public static async Task<bool> SlotExistsAsync(this ApiFactory factory, Slot slot)
+    {
+        using var scope = factory.Services.CreateScope();
+
+        return await scope.ServiceProvider
+            .GetRequiredService<AppDbContext>()
+            .Slots.AnyAsync(existing => existing.Id == slot.Id);
+    }
+
     public static async Task<int> CountSlotsAsync(this ApiFactory factory, Room room)
     {
         using var scope = factory.Services.CreateScope();
