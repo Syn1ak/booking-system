@@ -40,13 +40,31 @@ public sealed class UpdateRoom : IEndpoint
            .AddEndpointFilter<ValidationFilter<Request>>()
            .WithName(nameof(UpdateRoom));
 
-    private static async Task<IResult> Handle(
+    private static Task<IResult> Handle(
+        Guid roomId,
+        Request request,
+        AppDbContext database,
+        TimeProvider clock,
+        CancellationToken cancellationToken) =>
+        // The delete and the hours write share a transaction, and a retrying provider refuses a
+        // transaction it did not start itself.
+        database.Database
+            .CreateExecutionStrategy()
+            .ExecuteAsync(() => AttemptAsync(roomId, request, database, clock, cancellationToken));
+
+    /// <summary>
+    /// One attempt. A transient failure re-runs this from the top, so it re-reads the room
+    /// rather than reusing anything the failed attempt left behind.
+    /// </summary>
+    private static async Task<IResult> AttemptAsync(
         Guid roomId,
         Request request,
         AppDbContext database,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
+        database.ChangeTracker.Clear();
+
         var room = await database.Rooms
             .SingleOrDefaultAsync(room => room.Id == roomId && room.IsActive, cancellationToken);
 

@@ -142,10 +142,18 @@ a different category and *are* retried — by the connection resiliency policy, 
 booking handler. The two must not be merged: one means "the slot is taken", the other means
 "ask again and it may work".
 
-**Gotcha for whoever turns on `EnableRetryOnFailure` for Azure SQL:** the retrying execution
-strategy refuses user-initiated transactions, so any code opening one explicitly must wrap it
-in `Database.CreateExecutionStrategy().ExecuteAsync(...)`. The booking path opens one, and so
-does `UpdateRoom`, so this bites on the day the deployed connection string enables retries.
+**Retries are enabled** on the provider — three attempts, a two second cap, rather than the
+six-retry default that backs off for up to thirty seconds while a request waits. Deadlock
+victims (1205) are in the provider's transient list, and that is what makes slot generation
+survive several concurrent first reads of a cold date: it swallows duplicate keys but had no
+answer for a deadlock, so under genuine contention it failed the request outright rather than
+duplicating rows.
+
+**Gotcha:** a retrying strategy refuses a transaction it did not start, so each endpoint that
+opens one — `BookSlot` and `UpdateRoom` — runs its body through
+`Database.CreateExecutionStrategy().ExecuteAsync(...)`, and each body clears the change tracker
+first, because a retry re-runs it from the top and nothing may survive from the failed attempt.
+Unwrap either one and it throws on *every* request, not only under load.
 
 ## Releasing a claim is conditional on still holding it
 

@@ -28,13 +28,31 @@ public sealed class BookSlot : IEndpoint
     /// succeeds. The guarantee is the slot's concurrency tokens, not the checks below - see
     /// .claude/concurrency/concurrency.md.
     /// </summary>
-    private static async Task<IResult> Handle(
+    private static Task<IResult> Handle(
+        Request request,
+        ClaimsPrincipal principal,
+        AppDbContext database,
+        TimeProvider clock,
+        CancellationToken cancellationToken) =>
+        // The claim and the booking row share a transaction, and a retrying provider refuses a
+        // transaction it did not start itself.
+        database.Database
+            .CreateExecutionStrategy()
+            .ExecuteAsync(() => AttemptAsync(request, principal, database, clock, cancellationToken));
+
+    /// <summary>
+    /// One attempt. A transient failure re-runs this from the top, so it re-reads the slot
+    /// rather than reusing anything the failed attempt left behind.
+    /// </summary>
+    private static async Task<IResult> AttemptAsync(
         Request request,
         ClaimsPrincipal principal,
         AppDbContext database,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
+        database.ChangeTracker.Clear();
+
         var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         var slot = await database.Slots
