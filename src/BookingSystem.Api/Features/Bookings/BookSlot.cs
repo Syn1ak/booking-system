@@ -53,7 +53,7 @@ public sealed class BookSlot : IEndpoint
     {
         database.ChangeTracker.Clear();
 
-        var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = principal.UserId();
 
         var slot = await database.Slots
             .Where(candidate => candidate.Id == request.SlotId)

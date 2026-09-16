@@ -14,7 +14,7 @@ public sealed class GetCurrentUser : IEndpoint
 
     private static IResult Handle(ClaimsPrincipal user) =>
         Results.Ok(new Response(
-            Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!),
+            user.UserId(),
             user.FindFirstValue(ClaimTypes.Email),
             [.. user.FindAll(ClaimTypes.Role).Select(claim => claim.Value)]));
 }
