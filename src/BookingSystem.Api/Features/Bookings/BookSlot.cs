@@ -61,27 +61,31 @@ public sealed class BookSlot : IEndpoint
             return await AnswerClaimedSlotAsync(database, slot, userId, cancellationToken);
         }
 
-        var booking = new Booking
-        {
-            SlotId = slot.Id,
-            UserId = userId,
-            CreatedAtUtc = clock.GetUtcNow().UtcDateTime,
-        };
+        // Version 7 rather than NewGuid, so the key is time-ordered and inserts stay at the end
+        // of the clustered index. Generated here because the claim below names it.
+        var bookingId = Guid.CreateVersion7();
 
-        // Added first so EF assigns the key; its sequential GUIDs keep inserts off random pages.
-        database.Bookings.Add(booking);
-        slot.CurrentBookingId = booking.Id;
+        // One transaction, because the claim and the booking row it names have to land
+        // together: a claim on its own points at nothing, and a booking row on its own is a
+        // meeting nobody holds a slot for.
+        await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
+
+        slot.CurrentBookingId = bookingId;
 
         try
         {
-            // One call, so EF wraps both writes in a transaction and a lost claim discards its
-            // own booking row.
+            // The claim is written before the booking row, and the order is the whole point.
+            // The booking row is what the backstop index guards, so a loser that inserted first
+            // would trip that index instead of the token - failing with an error where the
+            // requirement calls for a conflict.
             await database.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException)
         {
-            // Not retried - a lost claim could only succeed if the winner cancelled. Clearing
-            // the tracker discards the failed write so the read below cannot replay it.
+            // Not retried - a lost claim could only succeed if the winner cancelled. Rolling
+            // back and clearing the tracker discards the failed write so the read below cannot
+            // replay it.
+            await transaction.RollbackAsync(cancellationToken);
             database.ChangeTracker.Clear();
 
             var claimed = await database.Slots
@@ -90,6 +94,18 @@ public sealed class BookSlot : IEndpoint
 
             return await AnswerClaimedSlotAsync(database, claimed, userId, cancellationToken);
         }
+
+        var booking = new Booking
+        {
+            Id = bookingId,
+            SlotId = slot.Id,
+            UserId = userId,
+            CreatedAtUtc = clock.GetUtcNow().UtcDateTime,
+        };
+
+        database.Bookings.Add(booking);
+        await database.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         // No Location: a booking has no single-resource route.
         return Results.Json(ToResponse(booking, slot), statusCode: StatusCodes.Status201Created);

@@ -43,12 +43,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             // changed, so the claim would overwrite a live booking.
             slot.Property(s => s.CurrentBookingId).IsConcurrencyToken();
 
-            // NoAction: this closes a reference cycle with the booking's slot key below.
-            slot.HasOne<Booking>()
-                .WithMany()
-                .HasForeignKey(s => s.CurrentBookingId)
-                .OnDelete(DeleteBehavior.NoAction);
-
             // Restrict, not the default cascade: rooms are deactivated rather than deleted, so
             // any code path that attempts a hard delete should fail loudly instead of quietly
             // taking the room's schedule - and its bookings - with it.

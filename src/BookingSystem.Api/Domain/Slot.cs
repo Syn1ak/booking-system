@@ -13,7 +13,10 @@ public sealed class Slot
 
     public DateTime EndsAtUtc { get; set; }
 
-    /// <summary>Null while the slot is free. Also a concurrency token.</summary>
+    /// <summary>
+    /// Null while the slot is free. Also a concurrency token, and deliberately not a foreign
+    /// key: the claim is written before the booking row it names exists.
+    /// </summary>
     public Guid? CurrentBookingId { get; set; }
 
     /// <summary>Changes on every write, making a claim a version-checked update.</summary>

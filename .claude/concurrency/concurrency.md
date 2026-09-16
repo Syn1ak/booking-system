@@ -28,12 +28,22 @@ This is not the check-then-write the task disqualifies. The freeness of the slot
 then trusted; it is *asserted in the predicate of the write*, so there is no window between the
 decision and the claim for another request to occupy.
 
-**Why the claim column is a token and not just the rowversion — the subtlest point here.** A
-rowversion guards the row against changes *since it was read*. On its own it does not prevent
-writing a claim over a slot that was *already claimed at the moment it was read*: nothing changed
-in between, so the version matches, the update succeeds, and a live booking is silently
-overwritten. Putting `CurrentBookingId` in the predicate means the write itself requires the slot
-to have been free, so the guarantee does not depend on a handler remembering to check.
+**The claim is written before the booking row, and the order is load-bearing.** The booking row
+is what the backstop index below guards, so a loser that inserted first would trip that index
+instead of the token and fail with an error where the requirement calls for a conflict. This is
+not theoretical: it is what the code did first, and the concurrency test caught it. The two
+writes therefore share an explicit transaction rather than one `SaveChanges`, and
+`Slot.CurrentBookingId` carries **no foreign key** to the booking — the claim names a row that
+does not exist yet, and a reference cycle would force EF back to inserting first.
+
+**What each token contributes.** Either one alone catches the race, because both sit in the same
+predicate and both change when a claim is written; the test confirms that removing either still
+passes and removing both fails. They are kept for different reasons. The rowversion is the
+mechanism proper and will guard any column added to a slot later. `CurrentBookingId` covers the
+case the rowversion cannot: a handler that *forgets to check freeness* and writes a claim over a
+slot already claimed when it was read. Nothing changed in between, so the version matches and the
+overwrite succeeds — with the column in the predicate that becomes a clean 409 instead of a
+corrupt claim caught later by the backstop index as a 500.
 
 Why this and not the alternatives, each of which is a defensible answer to the same problem:
 
@@ -106,6 +116,12 @@ later deletes one of the two as redundant:**
   visible, not a conflict — so it is **not** translated into a 409. It surfaces as a 500, which
   is the honest answer: the request did not lose a race, the system is wrong.
 
+**That division only holds while the claim is written first.** Insert the booking row before the
+claim and every legitimate loser trips this index, turning the conflict into a 500 and quietly
+demoting the token to decoration — which is the unique-index mechanism this document rejected,
+arrived at by accident. Anyone reordering those two writes is changing the mechanism, not
+tidying it.
+
 **Gotcha:** SQL Server raises 2601/2627 for this index, the same numbers `SlotGenerator`
 deliberately swallows when it loses a race to create a slot row. Three code paths, one error
 number, three correct handlings — swallow (creating a slot that now exists is success), 409
@@ -128,10 +144,8 @@ booking handler. The two must not be merged: one means "the slot is taken", the 
 
 **Gotcha for whoever turns on `EnableRetryOnFailure` for Azure SQL:** the retrying execution
 strategy refuses user-initiated transactions, so any code opening one explicitly must wrap it
-in `Database.CreateExecutionStrategy().ExecuteAsync(...)`. The booking path is safe by
-construction — it uses one `SaveChanges` and opens no transaction — but `UpdateRoom` already
-does, so this bites the existing code on the day the deployed connection string enables
-retries.
+in `Database.CreateExecutionStrategy().ExecuteAsync(...)`. The booking path opens one, and so
+does `UpdateRoom`, so this bites on the day the deployed connection string enables retries.
 
 ## Releasing a claim is conditional on still holding it
 
