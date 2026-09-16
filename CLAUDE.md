@@ -21,7 +21,7 @@ and what was rejected — so decisions are not re-derived or quietly reversed.
 | Code organisation, layering, data access | [.claude/architecture/architecture.md](.claude/architecture/architecture.md) |
 | Authentication, roles, authorization | [.claude/auth/auth.md](.claude/auth/auth.md) |
 | Slot model | [.claude/scheduling/scheduling.md](.claude/scheduling/scheduling.md) |
-| Concurrency control | *not yet decided* |
+| Concurrency control | [.claude/concurrency/concurrency.md](.claude/concurrency/concurrency.md) |
 | Real-time updates | *not yet decided* |
 
 If a change contradicts one of these, update the file in the same commit. A decision file
