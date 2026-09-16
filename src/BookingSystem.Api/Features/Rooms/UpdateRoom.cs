@@ -9,12 +9,11 @@ namespace BookingSystem.Api.Features.Rooms;
 
 public sealed class UpdateRoom : IEndpoint
 {
-    /// <remarks>
-    /// Slot length is deliberately absent. Changing it is allowed only while the room has no
-    /// future bookings, and that check queries a table that does not exist yet - so the field
-    /// and its conflict response ship with the bookings feature rather than unguarded here.
-    /// </remarks>
-    public sealed record Request(string Name, TimeOnly OpensAtUtc, TimeOnly ClosesAtUtc);
+    public sealed record Request(
+        string Name,
+        TimeOnly OpensAtUtc,
+        TimeOnly ClosesAtUtc,
+        int SlotLengthMinutes);
 
     public sealed record Response(
         Guid RoomId,
@@ -29,8 +28,18 @@ public sealed class UpdateRoom : IEndpoint
         {
             RuleFor(request => request.Name).NotEmpty().MaximumLength(200);
 
+            RuleFor(request => request.SlotLengthMinutes)
+                .Must(Room.AllowedSlotLengthMinutes.Contains)
+                .WithMessage($"Slot length must be one of: {string.Join(", ", Room.AllowedSlotLengthMinutes)}.");
+
             RuleFor(request => request.ClosesAtUtc)
                 .GreaterThan(request => request.OpensAtUtc);
+
+            RuleFor(request => request)
+                .Must(request => Room.FitsAtLeastOneSlot(
+                    request.OpensAtUtc, request.ClosesAtUtc, request.SlotLengthMinutes))
+                .WithMessage("The room's day must be long enough for at least one slot.")
+                .OverridePropertyName(nameof(Request.ClosesAtUtc));
         }
     }
 
@@ -73,19 +82,33 @@ public sealed class UpdateRoom : IEndpoint
             return Results.NotFound();
         }
 
-        // Checked here rather than in the validator, which cannot see the room's slot length.
-        if (!Room.FitsAtLeastOneSlot(request.OpensAtUtc, request.ClosesAtUtc, room.SlotLengthMinutes))
+        var now = clock.GetUtcNow().UtcDateTime;
+
+        // Hours may change at any time; slot length may not, while a booking stands on the
+        // current grid. An hour-long booking left under a new half-hour grid overlaps two new
+        // slots, and two people could then hold overlapping time through slots that are each
+        // individually booked once - so refusing is the only answer that keeps the guarantee.
+        if (request.SlotLengthMinutes != room.SlotLengthMinutes)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
+            var standing = await database.Slots.CountAsync(
+                slot => slot.RoomId == room.Id && slot.StartsAtUtc > now && slot.CurrentBookingId != null,
+                cancellationToken);
+
+            if (standing > 0)
             {
-                [nameof(Request.ClosesAtUtc)] =
-                    [$"The room's day must be long enough for one {room.SlotLengthMinutes} minute slot."],
-            });
+                return Results.Problem(
+                    title: "Slot length cannot be changed while bookings stand",
+                    detail: $"This room has {standing} future {(standing == 1 ? "booking" : "bookings")}. "
+                            + "Slot length may change only when it has none, because a booking made on "
+                            + "the current grid would overlap two slots on the new one.",
+                    statusCode: StatusCodes.Status409Conflict);
+            }
         }
 
         room.Name = request.Name;
         room.OpensAtUtc = request.OpensAtUtc;
         room.ClosesAtUtc = request.ClosesAtUtc;
+        room.SlotLengthMinutes = request.SlotLengthMinutes;
 
         // One transaction, because the alternative orderings both fail badly: new hours with
         // the old slot rows left behind shows a grid nobody can regenerate away, and deleted
@@ -100,7 +123,6 @@ public sealed class UpdateRoom : IEndpoint
         // Dropping the claim check does not corrupt anything - the restricting foreign key from
         // Bookings fails the delete instead - but it turns an hours change into a 500 for any
         // room with a future booking.
-        var now = clock.GetUtcNow().UtcDateTime;
         await database.Slots
             .Where(slot => slot.RoomId == room.Id
                            && slot.StartsAtUtc > now

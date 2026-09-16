@@ -13,6 +13,7 @@ public sealed class UpdateRoomTests(ApiFactory factory)
         name = "Board room",
         opensAtUtc = "10:00:00",
         closesAtUtc = "14:00:00",
+        slotLengthMinutes = 60,
     };
 
     [Fact]
@@ -80,6 +81,7 @@ public sealed class UpdateRoomTests(ApiFactory factory)
             name = "Board room",
             opensAtUtc = "09:00:00",
             closesAtUtc = "09:30:00",
+            slotLengthMinutes = 60,
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -89,24 +91,60 @@ public sealed class UpdateRoomTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Update_WithASlotLengthInTheBody_IgnoresIt()
+    public async Task Update_WithANewSlotLength_WhenNothingIsBooked_RebuildsTheGrid()
     {
         var room = await factory.CreateRoomAsync();
-        var client = await factory.CreateAdminClientAsync();
+        var date = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
+        var user = await factory.CreateUserClientAsync();
+        var admin = await factory.CreateAdminClientAsync();
 
-        var response = await client.PutAsJsonAsync($"/api/rooms/{room.Id}", new
+        var response = await admin.PutAsJsonAsync($"/api/rooms/{room.Id}", new
         {
             name = "Board room",
             opensAtUtc = "09:00:00",
             closesAtUtc = "17:00:00",
-            slotLengthMinutes = 15,
+            slotLengthMinutes = 30,
         });
 
-        // Changing slot length is refused while future bookings exist, and that check cannot
-        // exist yet - so the field must not be quietly honoured in the meantime.
+        response.EnsureSuccessStatusCode();
         var updated = await response.Content.ReadFromJsonAsync<UpdateRoom.Response>();
+        var after = await user.GetFromJsonAsync<GetRoomSchedule.Response>(Schedule(room.Id, date));
+
         Assert.NotNull(updated);
-        Assert.Equal(60, updated.SlotLengthMinutes);
+        Assert.Equal(30, updated.SlotLengthMinutes);
+        Assert.NotNull(after);
+        Assert.Equal(16, after.Slots.Length);
+    }
+
+    [Fact]
+    public async Task Update_WithANewSlotLength_WhileABookingStands_Returns409()
+    {
+        var room = await factory.CreateRoomAsync();
+        var date = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
+        var user = await factory.CreateUserClientAsync();
+        var admin = await factory.CreateAdminClientAsync();
+
+        var schedule = await user.GetFromJsonAsync<GetRoomSchedule.Response>(Schedule(room.Id, date));
+        Assert.NotNull(schedule);
+        (await user.PostAsJsonAsync("/api/bookings", new { slotId = schedule.Slots[0].SlotId }))
+            .EnsureSuccessStatusCode();
+
+        var response = await admin.PutAsJsonAsync($"/api/rooms/{room.Id}", new
+        {
+            name = "Renamed",
+            opensAtUtc = "09:00:00",
+            closesAtUtc = "17:00:00",
+            slotLengthMinutes = 30,
+        });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Contains("1 future booking", await response.Content.ReadAsStringAsync());
+
+        // The whole request is refused, not just the slot length: the name is unchanged too.
+        var unchanged = await admin.GetFromJsonAsync<GetRoom.Response>($"/api/rooms/{room.Id}");
+        Assert.NotNull(unchanged);
+        Assert.Equal(60, unchanged.SlotLengthMinutes);
+        Assert.Equal(room.Name, unchanged.Name);
     }
 
     private static string Schedule(Guid roomId, DateOnly date) =>
