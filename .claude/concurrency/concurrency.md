@@ -219,10 +219,13 @@ trusting what the read saw.
 
 ## What the schedule shows
 
-Each slot in a schedule response carries `isBooked` and `isMine`. Never the holder's identity,
-name or email: a regular user may not see other users' bookings, and the schedule is the
-endpoint where that would leak by accident. Admins get the full picture from the bookings
-endpoints, where it is the point.
+Each slot in a schedule response carries `isBooked` and `myBookingId`, the second set only when
+the caller holds the slot — which answers "is it mine" without a second field that could
+disagree with the first. Never the holder's identity, name or email: a regular user may not see
+other users' bookings, and the schedule is the endpoint where that would leak by accident. The
+query is restricted to the caller rather than filtered afterwards, so another user's booking is
+never loaded at all. Admins get the full picture from the bookings endpoints, where it is the
+point.
 
 Because the claim is stored on the slot row, this costs no join — the schedule read stays a
 single-table query, which is the compensation for storing the fact twice.
