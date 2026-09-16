@@ -11,21 +11,29 @@ as a 500 leaves the data correct and still fails the requirement.
 ## The claim is a version-checked update of the slot row
 
 A slot row carries `CurrentBookingId` — the booking that currently holds it, or null — and a
-`rowversion` concurrency token. Booking is one `SaveChanges`: insert the booking row and set
-the slot's `CurrentBookingId`. EF Core appends the token to the update:
+`rowversion`. **Both are configured as concurrency tokens**, so EF Core puts the original value
+of each into the update it generates:
 
 ```sql
-UPDATE Slots SET CurrentBookingId = @booking WHERE Id = @slot AND Version = @version
+UPDATE Slots SET CurrentBookingId = @booking
+WHERE Id = @slot AND Version = @version AND CurrentBookingId IS NULL
 ```
 
-The winner's update matches one row. Every loser read the same token, so their update matches
-zero rows, EF raises `DbUpdateConcurrencyException`, and because both writes ride a single
-`SaveChanges`, the loser's booking insert rolls back with it. One call, atomic, no explicit
-transaction to manage.
+Booking is one `SaveChanges`: insert the booking row and set the slot's claim. The winner's
+update matches one row. Every loser read the same token, so their update matches zero rows, EF
+raises `DbUpdateConcurrencyException`, and because both writes ride a single `SaveChanges`, the
+loser's booking insert rolls back with it. One call, atomic, no explicit transaction to manage.
 
-This is not the check-then-write the task disqualifies. The freeness of the slot is not read
-and then trusted; it is *asserted in the predicate of the write*, so there is no window
-between the decision and the claim for another request to occupy.
+This is not the check-then-write the task disqualifies. The freeness of the slot is not read and
+then trusted; it is *asserted in the predicate of the write*, so there is no window between the
+decision and the claim for another request to occupy.
+
+**Why the claim column is a token and not just the rowversion — the subtlest point here.** A
+rowversion guards the row against changes *since it was read*. On its own it does not prevent
+writing a claim over a slot that was *already claimed at the moment it was read*: nothing changed
+in between, so the version matches, the update succeeds, and a live booking is silently
+overwritten. Putting `CurrentBookingId` in the predicate means the write itself requires the slot
+to have been free, so the guarantee does not depend on a handler remembering to check.
 
 Why this and not the alternatives, each of which is a defensible answer to the same problem:
 
@@ -178,10 +186,14 @@ active, that the slot has not already started, and that it falls inside the book
 These are ordinary request validation and produce 400 or 404.
 
 **None of them is the guarantee**, and the file says so where they are written, because a
-reader who mistakes them for the protection will eventually "optimise" the token away. In
-particular there is deliberately **no pre-check that the slot is free**: it would add a round
-trip, it could not be trusted by the time the write ran, and its presence invites exactly that
-misreading.
+reader who mistakes them for the protection will eventually "optimise" the token away.
+
+The handler does also notice, from the slot it had to load anyway, that the slot is already
+claimed, and answers immediately in that case — 409, or 200 if the live booking is the caller's
+own. That check costs no extra round trip and produces a friendlier answer than provoking a
+failed write. But it is a **fast path, not the protection**: by the time the write runs it may
+already be stale, which is exactly why the predicate carries the claim column rather than
+trusting what the read saw.
 
 ## What the schedule shows
 
