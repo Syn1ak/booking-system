@@ -3,6 +3,7 @@ using BookingSystem.Api.Authorization;
 using BookingSystem.Api.Common;
 using BookingSystem.Api.Data;
 using BookingSystem.Api.Features.Rooms;
+using BookingSystem.Api.RealTime;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         sql => sql.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(2), errorNumbersToAdd: null)));
 
 builder.Services.AddValidatorsFromAssembly(typeof(IEndpoint).Assembly, includeInternalTypes: true);
+
+// Azure SignalR where it is configured, self-hosted otherwise, so the repository runs and
+// tests without an Azure subscription.
+var signalR = builder.Services.AddSignalR();
+var azureSignalR = builder.Configuration["Azure:SignalR:ConnectionString"];
+
+if (!string.IsNullOrWhiteSpace(azureSignalR))
+{
+    signalR.AddAzureSignalR(azureSignalR);
+}
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<SlotGenerator>();
@@ -53,5 +64,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapEndpoints();
+app.MapHub<ScheduleHub>(ScheduleHub.Path);
 
 app.Run();

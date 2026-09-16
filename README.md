@@ -68,6 +68,17 @@ so a fresh database has something to look at. A room of that name is never modif
 duplicated on later starts. No slots are seeded: they are created when a date's schedule is
 first read.
 
+### Real-time updates
+
+Schedule changes are pushed over a SignalR hub at `/hub/schedule`. Locally and under test the
+hub runs in-process, so nothing extra is needed to develop against it. Setting
+`Azure__SignalR__ConnectionString` switches the same hub onto Azure SignalR Service, which is
+what the deployed app does; the hub, its groups and its messages are identical either way.
+
+The hub requires an authenticated connection, and the client passes its token as an
+`access_token` query parameter because a browser cannot set headers on a WebSocket handshake.
+That is accepted on hub paths only.
+
 ## Tests
 
 ```bash

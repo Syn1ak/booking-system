@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using BookingSystem.Api.RealTime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -46,6 +47,21 @@ public static class AuthenticationServiceCollectionExtensions
 
                     NameClaimType = ClaimTypes.NameIdentifier,
                     RoleClaimType = ClaimTypes.Role,
+                };
+
+                // A browser cannot set an Authorization header on a WebSocket handshake.
+                // Scoped to the hub path because a query string lands in logs and referrers.
+                bearer.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        if (context.Request.Path.StartsWithSegments(ScheduleHub.Path))
+                        {
+                            context.Token = context.Request.Query["access_token"];
+                        }
+
+                        return Task.CompletedTask;
+                    },
                 };
             });
 
