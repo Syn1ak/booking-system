@@ -64,6 +64,12 @@ app.UseHttpsRedirection();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+// After the static files, and explicit because of it: WebApplication otherwise inserts routing
+// ahead of all of this, the SPA fallback route then matches every non-API path, and the static
+// file middleware skips any request that already has an endpoint. Every asset would be answered
+// with index.html.
+app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

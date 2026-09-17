@@ -8,6 +8,8 @@ namespace BookingSystem.IntegrationTests.Features.Spa;
 public sealed class SpaFallbackTests(ApiFactory factory) : IDisposable
 {
     private const string IndexHtml = "<!doctype html><title>Booking System</title>";
+    private const string AssetName = "main-TEST1234.js";
+    private const string AssetBody = "export const marker = 1;";
 
     private readonly string _webRoot = CreateWebRoot();
 
@@ -21,6 +23,16 @@ public sealed class SpaFallbackTests(ApiFactory factory) : IDisposable
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(IndexHtml, await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task StaticAsset_IsServedItselfRatherThanTheSpa()
+    {
+        var response = await CreateClient().GetAsync($"/{AssetName}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(AssetBody, await response.Content.ReadAsStringAsync());
+        Assert.Contains("javascript", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Theory]
@@ -44,6 +56,7 @@ public sealed class SpaFallbackTests(ApiFactory factory) : IDisposable
     {
         var path = Directory.CreateTempSubdirectory("booking-spa-").FullName;
         File.WriteAllText(Path.Combine(path, "index.html"), IndexHtml);
+        File.WriteAllText(Path.Combine(path, AssetName), AssetBody);
         return path;
     }
 }
