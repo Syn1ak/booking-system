@@ -1,0 +1,95 @@
+<div class="card border-0 shadow-lg">
+  <div class="card-body p-4 p-sm-5">
+    <h1 class="h4 mb-1">Welcome back</h1>
+    <p class="text-body-secondary mb-4">Sign in to see rooms and book a slot.</p>
+
+    @if ($reason() === expiredReason) {
+      <div class="alert alert-info d-flex gap-2 align-items-start small py-2" role="status">
+        <i class="bi bi-clock-history mt-1" aria-hidden="true"></i>
+        <span>Your session has ended. Sign in again to pick up where you left off.</span>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="mb-3">
+        <label class="form-label fw-medium" for="login-email">Email</label>
+        <input
+          id="login-email"
+          type="email"
+          class="form-control"
+          autocomplete="username"
+          [formControlName]="controlNames.email"
+          [class.is-invalid]="form.isInvalid('email')"
+        />
+        <app-field-error [control]="form.controls.email" />
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-medium" for="login-password">Password</label>
+        <div class="input-group has-validation">
+          <input
+            id="login-password"
+            class="form-control"
+            autocomplete="current-password"
+            [type]="$showPassword() ? 'text' : 'password'"
+            [formControlName]="controlNames.password"
+            [class.is-invalid]="form.isInvalid('password')"
+          />
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [attr.aria-label]="$showPassword() ? 'Hide password' : 'Show password'"
+            [attr.aria-pressed]="$showPassword()"
+            (click)="$showPassword.set(!$showPassword())"
+          >
+            <i
+              class="bi"
+              [class]="$showPassword() ? 'bi-eye-slash' : 'bi-eye'"
+              aria-hidden="true"
+            ></i>
+          </button>
+          <app-field-error [control]="form.controls.password" />
+        </div>
+      </div>
+
+      @if (facade.$error(); as error) {
+        <div class="alert alert-danger d-flex gap-2 align-items-start small py-2" role="alert">
+          <i class="bi bi-exclamation-circle mt-1" aria-hidden="true"></i>
+          <span>{{ error }}</span>
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary w-100 py-2"
+        [disabled]="form.invalid || facade.$pending()"
+      >
+        @if (facade.$pending()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        Sign in
+      </button>
+    </form>
+
+    @if (demoAccounts.length) {
+      <div class="mt-4 pt-4 border-top">
+        <p class="small text-body-secondary mb-2">Development demo accounts</p>
+        <div class="d-flex gap-2">
+          @for (account of demoAccounts; track account.email) {
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary flex-fill"
+              (click)="useDemoAccount(account)"
+            >
+              {{ account.label }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<p class="text-center text-body-secondary mt-4 mb-0">
+  New here? <a routerLink="/register" class="fw-medium">Create an account</a>
+</p>

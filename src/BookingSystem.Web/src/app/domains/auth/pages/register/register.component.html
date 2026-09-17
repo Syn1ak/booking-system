@@ -1,0 +1,79 @@
+<div class="card border-0 shadow-lg">
+  <div class="card-body p-4 p-sm-5">
+    <h1 class="h4 mb-1">Create your account</h1>
+    <p class="text-body-secondary mb-4">Book meeting rooms and see availability change live.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="mb-3">
+        <label class="form-label fw-medium" for="register-email">Email</label>
+        <input
+          id="register-email"
+          type="email"
+          class="form-control"
+          autocomplete="email"
+          [formControlName]="controlNames.email"
+          [class.is-invalid]="form.isInvalid('email')"
+        />
+        <app-field-error [control]="form.controls.email" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-medium" for="register-password">Password</label>
+        <input
+          id="register-password"
+          type="password"
+          class="form-control"
+          autocomplete="new-password"
+          aria-describedby="register-password-hint"
+          [formControlName]="controlNames.password"
+          [class.is-invalid]="form.isInvalid('password')"
+        />
+        <app-field-error [control]="form.controls.password" />
+        <div id="register-password-hint" class="form-text">
+          At least {{ passwordMinLength }} characters.
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-medium" for="register-confirm">Confirm password</label>
+        <input
+          id="register-confirm"
+          type="password"
+          class="form-control"
+          autocomplete="new-password"
+          [formControlName]="controlNames.confirmPassword"
+          [class.is-invalid]="form.isInvalid('confirmPassword') || form.hasPasswordMismatch"
+        />
+        <app-field-error [control]="form.controls.confirmPassword" />
+        @if (form.hasPasswordMismatch) {
+          <div class="invalid-feedback d-block">The passwords do not match.</div>
+        }
+      </div>
+
+      @if (facade.$errors().length) {
+        <div class="alert alert-danger small py-2" role="alert">
+          @for (error of facade.$errors(); track error) {
+            <div class="d-flex gap-2">
+              <i class="bi bi-exclamation-circle mt-1" aria-hidden="true"></i>{{ error }}
+            </div>
+          }
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary w-100 py-2"
+        [disabled]="form.invalid || facade.$pending()"
+      >
+        @if (facade.$pending()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        Create account
+      </button>
+    </form>
+  </div>
+</div>
+
+<p class="text-center text-body-secondary mt-4 mb-0">
+  Already have an account? <a routerLink="/login" class="fw-medium">Sign in</a>
+</p>
