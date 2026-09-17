@@ -4,7 +4,8 @@ Users view meeting rooms and their bookable time slots and reserve free ones; ad
 additionally manage rooms and see every user's bookings. When a booking changes, everyone
 viewing that room's schedule sees it immediately.
 
-Backend is ASP.NET Core on .NET 10 with Azure SQL. The system guarantees that concurrent
+Backend is ASP.NET Core on .NET 10 with Azure SQL; the frontend is Angular with Bootstrap and
+ng-bootstrap, served by the API from the same origin. The system guarantees that concurrent
 requests for the same slot result in exactly one booking, with the rest receiving a conflict
 response.
 
@@ -14,6 +15,7 @@ Design decisions are recorded in [CLAUDE.md](CLAUDE.md) and the files it links t
 
 - .NET 10 SDK
 - Docker (for the local database)
+- Node.js 22.22+ or 24.15+ (for the frontend)
 
 ## Running locally
 
@@ -47,6 +49,28 @@ dotnet run --project src/BookingSystem.Api
 The development connection string in `appsettings.Development.json` points at the Compose
 database above and carries its local-only password. If you override `MSSQL_SA_PASSWORD`,
 override the connection string too via the `ConnectionStrings__Default` environment variable.
+
+### Frontend
+
+With the API running, in a second terminal:
+
+```bash
+cd src/BookingSystem.Web
+npm ci
+npm start
+```
+
+Open `http://localhost:4200`. The dev server proxies `/api` and `/hub` to the API on
+`http://localhost:5103`, so the browser sees a single origin exactly as in production, and the
+hub runs over WebSockets through the proxy.
+
+Signing in keeps the token in memory only, never in browser storage, so **refreshing the page
+signs you out** and returns you to where you were after signing in again. That is a deliberate
+trade-off recorded in [.claude/auth/auth.md](.claude/auth/auth.md). In development builds the
+sign-in page offers the demo accounts below as shortcuts.
+
+To see live updates, open the same room's schedule in two browser tabs, sign in as a different
+user in each - every tab holds its own session - and book a slot in one.
 
 ### Demo accounts
 
@@ -85,8 +109,24 @@ That is accepted on hub paths only.
 dotnet test
 ```
 
+Frontend unit tests, which include the client's half of the real-time contract:
+
+```bash
+cd src/BookingSystem.Web
+npm test -- --watch=false
+```
+
 Integration tests boot the real application against a throwaway SQL Server container
 started by Testcontainers, apply migrations to it, and discard it afterwards. Docker must
 be running; nothing else needs setting up, and the Compose database above is untouched.
+
+## Publishing
+
+```bash
+dotnet publish src/BookingSystem.Api -c Release -o publish
+```
+
+builds the frontend into the API's `wwwroot` and publishes both as one artefact. `dotnet build`
+and `dotnet test` never run the frontend build, so they do not need Node.
 
 To stop the database, `docker compose down` — add `-v` to discard the data volume as well.

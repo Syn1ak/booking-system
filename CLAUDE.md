@@ -4,8 +4,9 @@
 
 A meeting room booking system. Users view rooms and their bookable time slots and reserve
 free ones; admins additionally manage rooms and see every user's bookings. Backend is
-ASP.NET Core on .NET 10 with Azure SQL; the frontend is a single-page app served from the
-same origin; booking changes are pushed to connected viewers over Azure SignalR.
+ASP.NET Core on .NET 10 with Azure SQL; the frontend is an Angular single-page app
+(`src/BookingSystem.Web`) served from the same origin; booking changes are pushed to connected
+viewers over Azure SignalR.
 
 The graded centrepiece is **concurrency**: when several requests target the same slot at the
 same moment, exactly one must succeed and the rest must receive a clear conflict response —
@@ -23,6 +24,7 @@ and what was rejected — so decisions are not re-derived or quietly reversed.
 | Slot model | [.claude/scheduling/scheduling.md](.claude/scheduling/scheduling.md) |
 | Concurrency control | [.claude/concurrency/concurrency.md](.claude/concurrency/concurrency.md) |
 | Real-time updates | [.claude/realtime/realtime.md](.claude/realtime/realtime.md) |
+| Frontend structure, styling, client-side contracts | [src/BookingSystem.Web/CLAUDE.md](src/BookingSystem.Web/CLAUDE.md) |
 
 If a change contradicts one of these, update the file in the same commit. A decision file
 that disagrees with the code is worse than no file.
@@ -50,6 +52,16 @@ dotnet ef database update --project src/BookingSystem.Api
 dotnet build          # from the repository root
 dotnet run --project src/BookingSystem.Api
 dotnet test           # integration tests; needs Docker, starts its own SQL Server
+dotnet publish src/BookingSystem.Api -c Release  # also builds the SPA into wwwroot; needs Node
+```
+
+Frontend, from `src/BookingSystem.Web` with the API running:
+
+```
+npm ci                # once per clone
+npm start             # http://localhost:4200, proxies /api and /hub to the API
+npm test              # unit tests
+npm run lint
 ```
 
 Integration tests run against a throwaway SQL Server container via Testcontainers, not
