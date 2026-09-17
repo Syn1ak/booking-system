@@ -4,6 +4,11 @@ import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component'
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
+  // First, and above the layouts, because both of those are empty-path routes and the auth one
+  // would otherwise swallow `/`: it matches, its children are only `login` and `register`, and
+  // the router does not backtrack out of a lazy config it has already resolved. The result was
+  // the auth shell rendered around an empty outlet, with no redirect and no error.
+  { path: '', pathMatch: 'full', redirectTo: 'rooms' },
   {
     path: '',
     component: AuthLayoutComponent,
@@ -14,7 +19,6 @@ export const routes: Routes = [
     component: MainLayoutComponent,
     canActivate: [authenticatedGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'rooms' },
       {
         path: 'rooms',
         loadChildren: () => import('./domains/rooms/rooms.routes').then((r) => r.ROUTES),
