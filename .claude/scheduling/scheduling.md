@@ -133,6 +133,12 @@ grid overlaps two new slots, and two people could then hold overlapping time thr
 that are each individually booked once. Refusing is the only answer that keeps the guarantee
 true.
 
+**Refusing correctly is a concurrency decision, and it is recorded as one.** The count of
+standing bookings runs *after* the retire and inside its transaction, because counting first
+and writing afterwards is a check-then-write a simultaneous booking slips straight through —
+which it demonstrably did. See "A slot-length change is refused *after* retiring, not before"
+in [concurrency.md](../concurrency/concurrency.md).
+
 ## Losing a race to generate a slot is a success
 
 A unique index on the slot's room and start time makes duplicate active rows impossible. Without it,

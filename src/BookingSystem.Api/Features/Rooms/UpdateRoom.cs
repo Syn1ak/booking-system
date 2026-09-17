@@ -91,22 +91,8 @@ public sealed class UpdateRoom : IEndpoint
         // current grid. An hour-long booking left under a new half-hour grid overlaps two new
         // slots, and two people could then hold overlapping time through slots that are each
         // individually booked once - so refusing is the only answer that keeps the guarantee.
-        if (request.SlotLengthMinutes != room.SlotLengthMinutes)
-        {
-            var standing = await database.Slots.CountAsync(
-                slot => slot.RoomId == room.Id && slot.StartsAtUtc > now && slot.CurrentBookingId != null,
-                cancellationToken);
-
-            if (standing > 0)
-            {
-                return Results.Problem(
-                    title: "Slot length cannot be changed while bookings stand",
-                    detail: $"This room has {standing} future {(standing == 1 ? "booking" : "bookings")}. "
-                            + "Slot length may change only when it has none, because a booking made on "
-                            + "the current grid would overlap two slots on the new one.",
-                    statusCode: StatusCodes.Status409Conflict);
-            }
-        }
+        // The refusal itself is below, after the retire, and that placement is the guarantee.
+        var slotLengthChanged = request.SlotLengthMinutes != room.SlotLengthMinutes;
 
         room.Name = request.Name;
         room.OpensAtUtc = request.OpensAtUtc;
@@ -117,6 +103,11 @@ public sealed class UpdateRoom : IEndpoint
         // the old slot rows left behind shows a grid nobody can regenerate away, and deleted
         // rows under unchanged hours is a schedule wiped by a request that reported failure.
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
+
+        // The room row is written first so its exclusive lock is held for the rest of the
+        // transaction. A schedule read that has not reached the room yet blocks here instead of
+        // materialising a grid from the rules this request is replacing.
+        await database.SaveChangesAsync(cancellationToken);
 
         // Future rows only, unclaimed only, and nothing is regenerated - the next read rebuilds
         // from the new rules. Slots already started, and slots somebody has booked, keep their
@@ -136,7 +127,46 @@ public sealed class UpdateRoom : IEndpoint
                 setters => setters.SetProperty(slot => slot.RetiredAtUtc, now),
                 cancellationToken);
 
-        await database.SaveChangesAsync(cancellationToken);
+        // Counted after the retire and inside its transaction, and that ordering is the whole
+        // of the guarantee rather than a tidier arrangement of the same two statements.
+        //
+        // Counting first and writing afterwards is the check-then-write that concurrency.md
+        // disqualifies for booking, and it fails here for the same reason: a claim committing
+        // between the count and the retire is invisible to the count, and the retire then
+        // spares the very slot it claimed because that slot is no longer free. Both requests
+        // report success, and two users hold overlapping time through slots each booked once -
+        // the failure this restriction exists to prevent, reached by the one path that did not
+        // go through the booking mechanism. It reproduced in roughly one race in fourteen.
+        //
+        // After the retire there is no such gap, because the retire's own exclusive locks are
+        // the serialisation point. A claim on a future free slot either landed before the retire
+        // read that row - so the row is still active and claimed, and is counted here - or it
+        // waits on the lock until this transaction ends and then fails its concurrency token
+        // against the retired row. Exactly one of the two requests can succeed.
+        if (slotLengthChanged)
+        {
+            var standing = await database.Slots.CountAsync(
+                slot => slot.RoomId == room.Id
+                        && slot.RetiredAtUtc == null
+                        && slot.StartsAtUtc > now
+                        && slot.CurrentBookingId != null,
+                cancellationToken);
+
+            if (standing > 0)
+            {
+                // Rolling back leaves the room's rules and every slot row exactly as they were,
+                // so a refused change retires nothing.
+                await transaction.RollbackAsync(cancellationToken);
+
+                return Results.Problem(
+                    title: "Slot length cannot be changed while bookings stand",
+                    detail: $"This room has {standing} future {(standing == 1 ? "booking" : "bookings")}. "
+                            + "Slot length may change only when it has none, because a booking made on "
+                            + "the current grid would overlap two slots on the new one.",
+                    statusCode: StatusCodes.Status409Conflict);
+            }
+        }
+
         await transaction.CommitAsync(cancellationToken);
 
         // Unconditional: deleted slot rows span every date, so there is no narrower change to send.

@@ -169,6 +169,50 @@ clears the *new* holder's claim: two users then believe they hold the slot, one 
 correctly. That is the silent overwrite the requirement forbids, arriving through the
 cancellation path rather than the booking path — which is exactly why it would be missed.
 
+## A slot-length change is refused *after* retiring, not before
+
+The third write that interacts with a claim is not a booking at all. Changing a room's slot
+length is refused while any future booking stands, because an hour-long booking left under a
+new half-hour grid overlaps two new slots — and two people would then hold overlapping time
+through slots that are each individually booked once. The rule is recorded in
+[scheduling.md](../scheduling/scheduling.md); how it is *enforced* belongs here.
+
+`UpdateRoom` counts the standing bookings **inside the transaction and after the retire**, and
+rolls the whole transaction back when it finds any. The ordering is the guarantee, not
+housekeeping:
+
+- **Counting first and writing afterwards is check-then-write**, the shape this document
+  disqualifies for booking, and it fails here for exactly the same reason. A claim committing
+  between the count and the retire is invisible to the count; the retire then *spares* the very
+  slot it claimed, because `CurrentBookingId IS NULL` no longer matches it. Both requests
+  report success and the room is double-booked in wall-clock time.
+- **This is not hypothetical.** It is what the code did first, and a manual race found it:
+  `POST /api/bookings` and `PUT /api/rooms/{id}` released together on dedicated threads
+  produced a 201 *and* a 200 in 2 of 28 attempts, leaving one user on 09:00–10:00 and another
+  on 09:30–10:00 in the same room. Every slot was still booked exactly once — the token did its
+  job perfectly. The hole was never in the booking path; it was in the one write that had not
+  been held to the same standard.
+- **After the retire there is no gap, because the retire's own exclusive locks are the
+  serialisation point.** A claim on a future free slot either landed before the retire read that
+  row — so the row stays active and claimed, and the count sees it — or it blocks on the lock
+  until this transaction ends and then fails its concurrency token against the now-retired row,
+  answering 404 exactly as an hours change already does. Exactly one of the two requests can
+  succeed, which is the contract this document opens with.
+
+The room row is also written **first** inside the transaction, so its exclusive lock is held for
+the rest of it: a schedule read that has not reached the room yet blocks rather than
+materialising a grid from the rules being replaced.
+
+**Accepted trade-off, stated plainly:** this closes the race for slot rows that exist when the
+retire runs, which is every row a booking can name. It does not close a *phantom* — a schedule
+read that loaded the room before this transaction began can still generate rows from the stale
+rules afterwards, and a booking could then claim one. Closing that needs a range lock
+(`HOLDLOCK`) or serializable isolation over the room's future slots, which this document rejects
+elsewhere and which would be bought for a window far narrower than the one above. The same
+phantom already lets a stale generator resurrect an old grid after an *hours* change, with or
+without a booking, so it is a property of generate-on-read rather than of this decision. Worth
+fixing, in `SlotGenerator`, as its own change.
+
 ## Cancellation preserves history, and is idempotent
 
 Cancelling sets `CancelledAtUtc` rather than deleting the row. The admin view of every user's
