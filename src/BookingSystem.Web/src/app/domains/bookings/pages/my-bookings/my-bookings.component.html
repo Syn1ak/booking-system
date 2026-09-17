@@ -1,0 +1,62 @@
+<app-page-header
+  title="My bookings"
+  subtitle="Everything you have booked, including what has passed or been cancelled."
+  icon="calendar2-check"
+>
+  <a pageHeaderActions class="btn btn-primary" routerLink="/rooms">
+    <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Book a room
+  </a>
+</app-page-header>
+
+<ul
+  ngbNav
+  #nav="ngbNav"
+  class="nav-pills gap-2 mb-3"
+  [activeId]="$activeTab()"
+  (activeIdChange)="$activeTab.set($event)"
+>
+  @for (tab of tabs; track tab.id) {
+    <li [ngbNavItem]="tab.id">
+      <button ngbNavLink>
+        {{ tab.label }}
+        <span class="badge bg-body-secondary text-body ms-1">{{ tab.$views().length }}</span>
+      </button>
+      <ng-template ngbNavContent>
+        <ng-container
+          [ngTemplateOutlet]="list"
+          [ngTemplateOutletContext]="{ $implicit: tab.$views(), empty: tab.empty }"
+        />
+      </ng-template>
+    </li>
+  }
+</ul>
+
+<div [ngbNavOutlet]="nav"></div>
+
+<ng-template #list let-views let-empty="empty">
+  @if (facade.$loading() && !views.length) {
+    <div class="card">
+      <div class="list-group list-group-flush" aria-busy="true">
+        @for (placeholder of placeholders; track placeholder) {
+          <div class="list-group-item d-flex gap-3 py-3">
+            <app-skeleton width="4.25rem" height="3.25rem" />
+            <div class="flex-grow-1 d-flex flex-column gap-2 justify-content-center">
+              <app-skeleton width="30%" />
+              <app-skeleton width="45%" height="0.8rem" />
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  } @else if (views.length) {
+    <div class="card overflow-hidden">
+      <div class="list-group list-group-flush">
+        @for (view of views; track view.booking.bookingId) {
+          <app-booking-list-item [view]="view" (cancelBooking)="confirmCancel($event)" />
+        }
+      </div>
+    </div>
+  } @else {
+    <app-empty-state icon="calendar2" title="No bookings" [message]="empty" />
+  }
+</ng-template>

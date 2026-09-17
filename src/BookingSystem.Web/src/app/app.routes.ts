@@ -19,6 +19,10 @@ export const routes: Routes = [
         path: 'rooms',
         loadChildren: () => import('./domains/rooms/rooms.routes').then((r) => r.ROUTES),
       },
+      {
+        path: 'bookings',
+        loadChildren: () => import('./domains/bookings/bookings.routes').then((r) => r.ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: 'rooms' },

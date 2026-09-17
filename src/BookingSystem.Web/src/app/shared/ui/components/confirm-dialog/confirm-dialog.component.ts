@@ -36,7 +36,9 @@ const CONFIRM_DIALOG_OPTIONS = new InjectionToken<TConfirmDialogOptions>('CONFIR
       </div>
     </div>
     <div class="modal-footer border-0 pt-0 px-4 pb-4">
-      <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Keep it</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">
+        Keep it
+      </button>
       <button
         type="button"
         class="btn"

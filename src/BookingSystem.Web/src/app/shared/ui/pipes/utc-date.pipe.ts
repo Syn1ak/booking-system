@@ -1,12 +1,14 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-export type TUtcDateFormat = 'long' | 'medium' | 'short' | 'weekday';
+export type TUtcDateFormat = 'long' | 'medium' | 'short' | 'weekday' | 'day' | 'month';
 
 const FORMATS: Record<TUtcDateFormat, Intl.DateTimeFormatOptions> = {
   long: { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
   medium: { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' },
   short: { day: 'numeric', month: 'short' },
   weekday: { weekday: 'short' },
+  day: { day: 'numeric' },
+  month: { month: 'short' },
 };
 
 /**
