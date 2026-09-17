@@ -71,6 +71,20 @@ public sealed class GetRoomScheduleTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Schedule_NamesTheLastBookableDate_AndThatDateIsReadable()
+    {
+        var room = await factory.CreateRoomAsync();
+        var client = await factory.CreateUserClientAsync();
+
+        var today = await client.GetFromJsonAsync<GetRoomSchedule.Response>(Endpoint(room, Today));
+        Assert.NotNull(today);
+        Assert.Equal(Today.AddDays(BookingWindowDays), today.LastBookableDate);
+
+        var last = await client.GetAsync(Endpoint(room, today.LastBookableDate));
+        Assert.Equal(HttpStatusCode.OK, last.StatusCode);
+    }
+
+    [Fact]
     public async Task Schedule_ForYesterday_Returns400AndWritesNothing() =>
         await AssertRefused(Today.AddDays(-1));
 

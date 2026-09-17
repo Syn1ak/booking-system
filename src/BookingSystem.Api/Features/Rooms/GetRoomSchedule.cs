@@ -8,7 +8,11 @@ namespace BookingSystem.Api.Features.Rooms;
 
 public sealed class GetRoomSchedule : IEndpoint
 {
-    public sealed record Response(Guid RoomId, DateOnly Date, SlotResponse[] Slots);
+    /// <summary>
+    /// <paramref name="LastBookableDate"/> bounds a client's date picker, so the window is
+    /// configured once, here, rather than restated in the browser.
+    /// </summary>
+    public sealed record Response(Guid RoomId, DateOnly Date, DateOnly LastBookableDate, SlotResponse[] Slots);
 
     /// <summary>
     /// <paramref name="MyBookingId"/> is set only when the caller holds the slot, which also
@@ -72,6 +76,7 @@ public sealed class GetRoomSchedule : IEndpoint
         return Results.Ok(new Response(
             room.Id,
             requested,
+            generator.LastBookableDate,
             [.. slots.Select(slot => new SlotResponse(
                 slot.Id,
                 slot.StartsAtUtc,

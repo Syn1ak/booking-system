@@ -23,6 +23,11 @@ public sealed class SlotGenerator(
 
     public int BookingWindowDays => options.Value.BookingWindowDays;
 
+    /// <summary>The latest date a schedule may be read for, inclusive.</summary>
+    public DateOnly LastBookableDate => Today.AddDays(BookingWindowDays);
+
+    private DateOnly Today => DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+
     /// <summary>
     /// The room's slots on <paramref name="dateUtc"/>, generating them first if missing, or
     /// <c>null</c> if the date is outside the booking window. Null rather than an empty list:
@@ -87,12 +92,8 @@ public sealed class SlotGenerator(
             .ToListAsync(cancellationToken);
     }
 
-    private bool IsWithinWindow(DateOnly dateUtc)
-    {
-        var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
-
-        return dateUtc >= today && dateUtc <= today.AddDays(BookingWindowDays);
-    }
+    private bool IsWithinWindow(DateOnly dateUtc) =>
+        dateUtc >= Today && dateUtc <= LastBookableDate;
 
     private static bool IsDuplicateSlot(DbUpdateException exception) =>
         exception.InnerException is SqlException sql
