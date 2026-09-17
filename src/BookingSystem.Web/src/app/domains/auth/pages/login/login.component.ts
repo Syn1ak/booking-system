@@ -4,7 +4,6 @@ import {
   DestroyRef,
   inject,
   input,
-  isDevMode,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,6 +14,9 @@ import { FieldErrorComponent } from '../../../../shared/ui/components/field-erro
 import { LoginFacade } from './data-access/facades/login.facade';
 import { LoginFormHandler, TLoginForm } from './models/login.form';
 
+// Shown in every environment, deployed included: the deployed site is a reviewer's demo, and
+// these credentials are the seeded ones from the repository, so hiding the buttons would hide
+// nothing while costing a reviewer the fastest way in.
 const DEMO_ACCOUNTS: readonly (TLoginForm & { label: string })[] = [
   { label: 'Demo admin', email: 'admin@example.com', password: 'Admin123!' },
   { label: 'Demo user', email: 'user@example.com', password: 'User123!' },
@@ -29,7 +31,7 @@ const DEMO_ACCOUNTS: readonly (TLoginForm & { label: string })[] = [
 })
 export default class LoginComponent {
   readonly expiredReason = SESSION_EXPIRED_REASON;
-  readonly demoAccounts = isDevMode() ? DEMO_ACCOUNTS : [];
+  readonly demoAccounts = DEMO_ACCOUNTS;
 
   readonly facade = inject(LoginFacade);
   private readonly destroyRef = inject(DestroyRef);

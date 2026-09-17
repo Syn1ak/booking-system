@@ -127,8 +127,16 @@ narrowly to where it is the protocol-sanctioned mechanism.
 ## Secrets
 
 The signing key is never committed. Locally it comes from user secrets; in the deployed
-environment from application configuration. Seeded demo passwords are development-only and
-are overridden in deployment.
+environment from application configuration.
+
+Seeded demo passwords are the same in development and in deployment, and the login page offers
+them as one-click buttons everywhere rather than only in a development build. This is a demo
+whose reviewers read the repository: the passwords are in `appsettings.Development.json`, so
+hiding the buttons in the deployed build would conceal nothing from anyone who can already find
+them, while costing a reviewer the fastest way to see both roles. The consequence is accepted
+deliberately - anyone at all can sign in to the deployed site as an administrator, so nothing in
+it is private. A real deployment would invert both halves of this: distinct per-environment
+credentials, and no demo buttons.
 
 ## Deliberately out of scope
 
