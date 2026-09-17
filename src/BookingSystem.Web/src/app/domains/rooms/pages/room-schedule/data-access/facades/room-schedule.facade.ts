@@ -159,7 +159,15 @@ export class RoomScheduleFacade {
             this.toasts.info(problem.title ?? 'This slot can no longer be booked', problem.detail);
             this.reload();
           },
-          [HttpStatusCode.NotFound]: () => this.roomGone(),
+          // The slot left the grid when the room's hours changed; if the room itself is gone,
+          // the refetch's own 404 says so.
+          [HttpStatusCode.NotFound]: () => {
+            this.toasts.info(
+              'This slot is no longer available',
+              "The room's hours have changed. The schedule now shows the current slots.",
+            );
+            this.reload();
+          },
         }),
         finalize(() => this.setPending(slotId, false)),
       )

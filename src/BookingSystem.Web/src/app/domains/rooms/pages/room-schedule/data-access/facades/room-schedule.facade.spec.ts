@@ -154,6 +154,18 @@ describe('RoomScheduleFacade', () => {
     expect(facade.$slots()[0].status).toBe('booked');
   });
 
+  it('refetches instead of leaving the room when the slot has left the grid', async () => {
+    await open();
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    facade.book('s1');
+    http.expectOne('/api/bookings').flush(null, { status: 404, statusText: 'Not Found' });
+
+    scheduleRequest().flush(schedule([slot({ slotId: 's2', sequence: 30 })]));
+    expect(navigate).not.toHaveBeenCalled();
+    expect(facade.$slots().map((view) => view.slot.slotId)).toEqual(['s2']);
+  });
+
   it('refetches on a schedule reset and leaves a room that no longer exists', async () => {
     await open();
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
