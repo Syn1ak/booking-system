@@ -100,6 +100,8 @@ above are the committed summary. Read the long form before you:
 | [dependency-graph/dependency-graph.md](.claude/architecture/dependency-graph/dependency-graph.md) | add an import that crosses layers |
 | [routing/routing.md](.claude/architecture/routing/routing.md) | add or change a route |
 | [code-styleguide/code-styleguide.md](.claude/architecture/code-styleguide/code-styleguide.md) | write a component or service |
+| `angular-code-style` skill | create or edit a component, service, facade, guard, pipe or types file |
+| `styling-conventions` skill | touch a template's classes or any stylesheet |
 | `forms-and-i18-enums` skill | build a form, an enum-backed select, or server-error display |
 
 **Vocabulary map** — the copied docs were written for a different app:
@@ -110,6 +112,9 @@ above are the committed summary. Read the long form before you:
 | Angular Material (`mat-error`, `errorStateMatcher`) | Bootstrap `is-invalid` / `invalid-feedback` and ng-bootstrap widgets |
 | ProblemDetails `errors: [{ code, message, property }]`, handlers keyed by `title` | ASP.NET `errors: { Field: ["message"] }`, handlers keyed by **status code** |
 | `patterns/` | `shared/features/` (none needed yet) |
+| `itero-web/assets/scss/` (utils, components, abstracts) | `src/styles/` (utilities, components, `_variables.scss`, `_theme.scss`) |
+| palette utilities (`text-neutral-800`, `bg-purple-100`, `padding-4`, `rounded-md`) and `var(--neutral-700)` | Bootstrap utilities and its CSS variables (`text-body-secondary`, `bg-primary-subtle`, `p-3`, `rounded-3`, `var(--bs-border-color)`) plus `--app-*` variables from `_theme.scss` |
+| Angular Material overrides as the one `!important` exception | none: override Bootstrap through its variables |
 
 ## Styling
 
