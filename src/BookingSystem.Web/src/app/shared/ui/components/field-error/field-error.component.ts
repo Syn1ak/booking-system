@@ -17,7 +17,8 @@ const DEFAULT_MESSAGES: TErrorMessages = {
 
 /**
  * Shows the first error of a touched control. Pair with `[class.is-invalid]` on the input and
- * put this directly after it, so Bootstrap's `invalid-feedback` sibling rule reveals it.
+ * place it after the input — after an `.input-group`, not inside it, or it becomes a flex item
+ * beside the input.
  */
 @Component({
   selector: 'app-field-error',
@@ -26,6 +27,7 @@ const DEFAULT_MESSAGES: TErrorMessages = {
       <div class="invalid-feedback d-block">{{ message }}</div>
     }
   `,
+  host: { class: 'd-block w-100' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FieldErrorComponent {
