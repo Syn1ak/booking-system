@@ -19,6 +19,16 @@
   </PropertyGroup>
 
   <!--
+    wwwroot is build output, not source. The Web SDK globs it at evaluation time, so a second
+    publish recorded the previous build's hashed file names, then failed to copy them once
+    npm run build had replaced them with new ones. PublishSpa adds the real files below.
+  -->
+  <ItemGroup>
+    <Content Remove="wwwroot\**" />
+    <None Remove="wwwroot\**" />
+  </ItemGroup>
+
+  <!--
     Publish only, so dotnet build and dotnet test never need Node. The SPA builds into wwwroot,
     and files created during the build are not in MSBuild's evaluated items, so they are added to
     the publish set explicitly. Set SkipSpaBuild=true to publish an already-built wwwroot.
