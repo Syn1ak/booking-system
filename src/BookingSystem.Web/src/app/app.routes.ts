@@ -13,6 +13,13 @@ export const routes: Routes = [
     path: '',
     component: MainLayoutComponent,
     canActivate: [authenticatedGuard],
-    children: [],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'rooms' },
+      {
+        path: 'rooms',
+        loadChildren: () => import('./domains/rooms/rooms.routes').then((r) => r.ROUTES),
+      },
+    ],
   },
+  { path: '**', redirectTo: 'rooms' },
 ];

@@ -1,0 +1,56 @@
+<app-page-header
+  title="Rooms"
+  subtitle="Pick a room to see its schedule. Free slots update live as others book."
+  icon="door-open"
+>
+  @if (session.can('canManageRooms')) {
+    <a pageHeaderActions class="btn btn-outline-primary" routerLink="/manage/rooms">
+      <i class="bi bi-sliders me-2" aria-hidden="true"></i>Manage rooms
+    </a>
+  }
+</app-page-header>
+
+@if (facade.$loading()) {
+  <div class="row g-3" aria-busy="true" aria-label="Loading rooms">
+    @for (placeholder of placeholders; track placeholder) {
+      <div class="col-sm-6 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body d-flex flex-column gap-3">
+            <div class="d-flex gap-3">
+              <app-skeleton width="2.75rem" height="2.75rem" />
+              <div class="flex-grow-1 d-flex flex-column gap-2">
+                <app-skeleton width="60%" height="1.1rem" />
+                <app-skeleton width="40%" height="0.8rem" />
+              </div>
+            </div>
+            <app-skeleton width="70%" height="1.4rem" />
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+} @else if (facade.$rooms().length) {
+  <div class="row g-3">
+    @for (room of facade.$rooms(); track room.roomId) {
+      <div class="col-sm-6 col-lg-4">
+        <app-room-card [room]="room" [link]="['/rooms', room.roomId]" />
+      </div>
+    }
+  </div>
+} @else {
+  <app-empty-state
+    icon="door-closed"
+    title="No rooms yet"
+    [message]="
+      session.can('canManageRooms')
+        ? 'Create the first room to open it for booking.'
+        : 'An administrator has not opened any rooms for booking yet.'
+    "
+  >
+    @if (session.can('canManageRooms')) {
+      <a class="btn btn-primary" routerLink="/manage/rooms">
+        <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Create a room
+      </a>
+    }
+  </app-empty-state>
+}
