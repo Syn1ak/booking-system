@@ -1,0 +1,100 @@
+<a routerLink="/rooms" class="link-secondary d-inline-flex align-items-center gap-1 small mb-3">
+  <i class="bi bi-arrow-left" aria-hidden="true"></i> All rooms
+</a>
+
+@if (facade.$room(); as room) {
+  <app-page-header
+    [title]="room.name"
+    [subtitle]="
+      'Open ' +
+      (room.opensAtUtc | timeOnly) +
+      '–' +
+      (room.closesAtUtc | timeOnly) +
+      ' UTC · ' +
+      room.slotLengthMinutes +
+      '-minute slots'
+    "
+    icon="door-open"
+  >
+    <button
+      pageHeaderActions
+      type="button"
+      class="btn btn-outline-secondary"
+      [disabled]="facade.$refreshing()"
+      (click)="facade.reload()"
+    >
+      <i class="bi bi-arrow-clockwise me-2" aria-hidden="true"></i>Refresh
+    </button>
+  </app-page-header>
+} @else {
+  <div class="d-flex gap-3 mb-4" aria-hidden="true">
+    <app-skeleton width="2.75rem" height="2.75rem" />
+    <div class="flex-grow-1 d-flex flex-column gap-2">
+      <app-skeleton width="14rem" height="1.6rem" />
+      <app-skeleton width="20rem" height="0.9rem" />
+    </div>
+  </div>
+}
+
+<section class="card mb-4" aria-label="Date and availability">
+  <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+    @if (facade.$date(); as date) {
+      <app-date-navigator
+        [date]="date"
+        [today]="facade.$today()"
+        [lastBookableDate]="facade.$lastBookableDate()"
+        (dateChange)="changeDate($event)"
+      />
+    }
+    <div class="d-flex flex-wrap gap-2" aria-live="polite">
+      <span class="badge bg-success-subtle text-success-emphasis py-2 px-3">
+        {{ facade.$availableCount() }} available
+      </span>
+      @if (facade.$mineCount()) {
+        <span class="badge bg-primary-subtle text-primary-emphasis py-2 px-3">
+          {{ facade.$mineCount() }} yours
+        </span>
+      }
+    </div>
+  </div>
+</section>
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+  <h2 class="h6 mb-0 text-body-secondary">
+    {{ facade.$date() | utcDate: 'long' }}
+  </h2>
+  <ul class="list-inline small text-body-secondary mb-0" aria-label="Legend">
+    @for (item of legend; track item.status) {
+      <li class="list-inline-item me-3">
+        <span class="badge me-1" [class]="item.badgeClass"
+          ><i class="bi" [class]="item.icon" aria-hidden="true"></i
+        ></span>
+        {{ item.label }}
+      </li>
+    }
+  </ul>
+</div>
+
+@if (facade.$loading()) {
+  <div class="slot-grid" aria-busy="true" aria-label="Loading schedule">
+    @for (placeholder of placeholders; track placeholder) {
+      <app-skeleton height="7.25rem" />
+    }
+  </div>
+} @else if (facade.$slots().length) {
+  <div class="slot-grid">
+    @for (view of facade.$slots(); track view.slot.slotId) {
+      <app-slot-tile
+        [view]="view"
+        (bookSlot)="facade.book($event)"
+        (cancelBooking)="confirmCancel($event)"
+      />
+    }
+  </div>
+} @else {
+  <app-empty-state
+    icon="calendar-x"
+    title="No slots on this date"
+    message="This room has no bookable time on the selected day. Try another date."
+  />
+}

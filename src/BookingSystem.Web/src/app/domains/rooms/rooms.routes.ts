@@ -6,4 +6,9 @@ export const ROUTES: Route[] = [
     title: 'Rooms · RoomBook',
     loadComponent: () => import('./pages/room-list/room-list.component'),
   },
+  {
+    path: ':roomId',
+    title: 'Schedule · RoomBook',
+    loadComponent: () => import('./pages/room-schedule/room-schedule.component'),
+  },
 ];
