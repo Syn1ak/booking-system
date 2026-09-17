@@ -61,6 +61,19 @@
             "outputPath": {
               "base": "../BookingSystem.Api/wwwroot",
               "browser": ""
+            },
+            "polyfills": [
+              "@angular/localize/init"
+            ],
+            "stylePreprocessorOptions": {
+              "sass": {
+                "silenceDeprecations": [
+                  "import",
+                  "global-builtin",
+                  "color-functions",
+                  "if-function"
+                ]
+              }
             }
           },
           "configurations": {

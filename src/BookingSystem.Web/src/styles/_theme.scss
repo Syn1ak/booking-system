@@ -1,0 +1,41 @@
+// Project-level CSS variables that follow Bootstrap's colour mode.
+
+:root,
+[data-bs-theme='light'] {
+  --app-surface: #ffffff;
+  --app-surface-border: rgba(15, 23, 42, 0.07);
+  --app-navbar-bg: rgba(255, 255, 255, 0.8);
+  --app-brand-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #db2777 100%);
+  --app-auth-backdrop:
+    radial-gradient(60rem 40rem at 10% -10%, rgba(79, 70, 229, 0.18), transparent 60%),
+    radial-gradient(50rem 36rem at 110% 110%, rgba(219, 39, 119, 0.12), transparent 60%);
+  --app-skeleton-base: #e8ebf3;
+  --app-skeleton-shine: #f5f7fb;
+}
+
+[data-bs-theme='dark'] {
+  --app-surface: #111831;
+  --app-surface-border: rgba(148, 163, 184, 0.12);
+  --app-navbar-bg: rgba(11, 16, 32, 0.75);
+  --app-auth-backdrop:
+    radial-gradient(60rem 40rem at 10% -10%, rgba(99, 102, 241, 0.25), transparent 60%),
+    radial-gradient(50rem 36rem at 110% 110%, rgba(219, 39, 119, 0.15), transparent 60%);
+  --app-skeleton-base: #182141;
+  --app-skeleton-shine: #202b52;
+  color-scheme: dark;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+h1,
+h2,
+h3,
+.h1,
+.h2,
+.h3 {
+  letter-spacing: -0.02em;
+}

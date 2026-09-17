@@ -1,0 +1,86 @@
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: $zindex-sticky;
+  background: var(--app-navbar-bg);
+  border-bottom: 1px solid var(--app-surface-border);
+  backdrop-filter: saturate(180%) blur(12px);
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bs-emphasis-color);
+
+  &:hover {
+    text-decoration: none;
+    color: var(--bs-emphasis-color);
+  }
+}
+
+.app-brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: $border-radius;
+  background: var(--app-brand-gradient);
+  color: #fff;
+  box-shadow: $box-shadow-sm;
+}
+
+.app-nav-link {
+  border-radius: $border-radius-sm;
+  padding: 0.5rem 0.75rem !important;
+  color: var(--bs-secondary-color);
+  font-weight: 500;
+
+  &:hover {
+    color: var(--bs-emphasis-color);
+    background: var(--bs-tertiary-bg);
+    text-decoration: none;
+  }
+
+  &.active {
+    color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+  }
+}
+
+.app-main {
+  flex: 1 0 auto;
+  padding-block: 2rem 4rem;
+}
+
+.app-auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--app-auth-backdrop), var(--bs-body-bg);
+}
+
+.app-auth-card {
+  width: 100%;
+  max-width: 26rem;
+}
+
+.app-toasts {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: $zindex-toast;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(24rem, calc(100vw - 2rem));
+}

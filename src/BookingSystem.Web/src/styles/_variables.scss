@@ -1,0 +1,88 @@
+// Overrides of Bootstrap's defaults. Imported after Bootstrap's functions and before its
+// variables, which is the only point at which a `!default` can still be replaced.
+
+$primary: #4f46e5;
+$secondary: #64748b;
+$success: #059669;
+$info: #0284c7;
+$warning: #d97706;
+$danger: #dc2626;
+$light: #f8fafc;
+$dark: #0f172a;
+
+$font-family-sans-serif:
+  'Inter Variable',
+  system-ui,
+  -apple-system,
+  'Segoe UI',
+  Roboto,
+  'Helvetica Neue',
+  sans-serif;
+$font-size-base: 0.9375rem;
+$headings-font-weight: 650;
+$display-font-weight: 700;
+$lead-font-weight: 400;
+
+$body-bg: #f4f5fa;
+$body-color: #1e293b;
+$body-secondary-color: #64748b;
+$border-color: #e2e8f0;
+
+$body-bg-dark: #0b1020;
+$body-color-dark: #e2e8f0;
+$body-secondary-color-dark: #94a3b8;
+$body-tertiary-bg-dark: #131a2e;
+$border-color-dark: #1e293b;
+
+$border-radius: 0.625rem;
+$border-radius-sm: 0.5rem;
+$border-radius-lg: 0.875rem;
+$border-radius-xl: 1.25rem;
+$border-radius-xxl: 1.75rem;
+
+$box-shadow-sm:
+  0 1px 2px rgba(15, 23, 42, 0.05),
+  0 1px 3px rgba(15, 23, 42, 0.05);
+$box-shadow:
+  0 4px 6px -1px rgba(15, 23, 42, 0.06),
+  0 10px 24px -4px rgba(15, 23, 42, 0.08);
+$box-shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.18);
+
+$link-decoration: none;
+$link-hover-decoration: underline;
+
+$btn-font-weight: 500;
+$btn-padding-x: 1rem;
+$btn-padding-y: 0.5rem;
+$input-padding-y: 0.5rem;
+$input-btn-focus-width: 0.2rem;
+$input-btn-focus-color-opacity: 0.2;
+
+// Surfaces sit one step above the page background; see _theme.scss.
+$card-bg: var(--app-surface);
+$card-border-color: var(--app-surface-border);
+$card-cap-bg: transparent;
+$card-spacer-y: 1.25rem;
+$card-spacer-x: 1.25rem;
+$modal-content-bg: var(--app-surface);
+$modal-content-border-color: var(--app-surface-border);
+$modal-backdrop-opacity: 0.35;
+$dropdown-bg: var(--app-surface);
+$dropdown-border-color: var(--app-surface-border);
+$dropdown-link-active-bg: $primary;
+$popover-bg: var(--app-surface);
+$toast-background-color: var(--app-surface);
+$toast-border-color: var(--app-surface-border);
+$list-group-bg: var(--app-surface);
+$input-bg: var(--app-surface);
+$form-select-bg: var(--app-surface);
+$table-bg: transparent;
+$nav-tabs-link-active-bg: var(--app-surface);
+
+$navbar-padding-y: 0.75rem;
+$badge-font-weight: 600;
+$badge-padding-y: 0.4em;
+$badge-padding-x: 0.7em;
+$badge-border-radius: 50rem;
+
+$enable-negative-margins: true;

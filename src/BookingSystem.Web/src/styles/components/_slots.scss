@@ -1,0 +1,107 @@
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.875rem;
+}
+
+.slot-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--app-surface-border);
+  border-radius: $border-radius-lg;
+  background: var(--app-surface);
+  box-shadow: $box-shadow-sm;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0.875rem auto 0.875rem 0;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--slot-accent, transparent);
+  }
+
+  &--free {
+    --slot-accent: var(--bs-success);
+
+    &:hover {
+      border-color: rgba(var(--bs-success-rgb), 0.45);
+      box-shadow: $box-shadow;
+    }
+  }
+
+  &--booked {
+    --slot-accent: var(--bs-secondary-color);
+    background: var(--bs-tertiary-bg);
+  }
+
+  &--mine {
+    --slot-accent: var(--bs-primary);
+    border-color: rgba(var(--bs-primary-rgb), 0.4);
+    background: var(--bs-primary-bg-subtle);
+  }
+
+  &--past {
+    opacity: 0.55;
+  }
+
+  &--just-changed {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: slot-changed 1.6s ease-out;
+    }
+  }
+}
+
+.slot-time {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--bs-emphasis-color);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.live-dot {
+  @extend .status-dot;
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: live-pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes slot-changed {
+  0% {
+    box-shadow:
+      0 0 0 0.25rem rgba(var(--bs-warning-rgb), 0.55),
+      $box-shadow-sm;
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(var(--bs-warning-rgb), 0),
+      $box-shadow-sm;
+  }
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

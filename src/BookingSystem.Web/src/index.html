@@ -5,7 +5,25 @@
     <title>Booking System</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <meta name="description" content="Book meeting rooms and see availability change live." />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <script>
+      // Runs before first paint so a dark-mode user never sees a light flash. The key is shared
+      // with ColorModeService.
+      (function () {
+        var stored = null;
+        try {
+          stored = localStorage.getItem('color-mode');
+        } catch (_) {}
+        var mode =
+          stored === 'light' || stored === 'dark'
+            ? stored
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+        document.documentElement.setAttribute('data-bs-theme', mode);
+      })();
+    </script>
   </head>
   <body>
     <app-root></app-root>
