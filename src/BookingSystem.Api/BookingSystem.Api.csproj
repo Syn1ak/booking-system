@@ -14,4 +14,27 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <SpaRoot>..\BookingSystem.Web\</SpaRoot>
+  </PropertyGroup>
+
+  <!--
+    Publish only, so dotnet build and dotnet test never need Node. The SPA builds into wwwroot,
+    and files created during the build are not in MSBuild's evaluated items, so they are added to
+    the publish set explicitly. Set SkipSpaBuild=true to publish an already-built wwwroot.
+  -->
+  <Target Name="PublishSpa" AfterTargets="ComputeFilesToPublish" Condition="'$(SkipSpaBuild)' != 'true'">
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm ci" Condition="!Exists('$(SpaRoot)node_modules')" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
+
+    <ItemGroup>
+      <SpaFiles Include="wwwroot\**" />
+      <ResolvedFileToPublish Include="@(SpaFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
 </Project>
