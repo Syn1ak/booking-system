@@ -1,0 +1,60 @@
+<app-page-header
+  title="Manage rooms"
+  subtitle="Create rooms, adjust their hours and slot length, or take them out of service."
+  icon="sliders"
+>
+  <button pageHeaderActions type="button" class="btn btn-primary" (click)="openForm()">
+    <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>New room
+  </button>
+</app-page-header>
+
+@if (facade.$loading() && !facade.$rooms().length) {
+  <div class="row g-3" aria-busy="true">
+    @for (placeholder of placeholders; track placeholder) {
+      <div class="col-sm-6 col-lg-4">
+        <app-skeleton height="10rem" />
+      </div>
+    }
+  </div>
+} @else if (facade.$rooms().length) {
+  <div class="row g-3">
+    @for (room of facade.$rooms(); track room.roomId) {
+      <div class="col-sm-6 col-lg-4">
+        <app-room-card [room]="room">
+          <div roomCardFooter class="card-footer bg-transparent d-flex gap-2 py-3">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary flex-fill"
+              (click)="openForm(room)"
+            >
+              <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger flex-fill"
+              [disabled]="facade.$deactivating() === room.roomId"
+              (click)="confirmDeactivate(room)"
+            >
+              @if (facade.$deactivating() === room.roomId) {
+                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+              } @else {
+                <i class="bi bi-archive me-1" aria-hidden="true"></i>
+              }
+              Deactivate
+            </button>
+          </div>
+        </app-room-card>
+      </div>
+    }
+  </div>
+} @else {
+  <app-empty-state
+    icon="door-closed"
+    title="No rooms yet"
+    message="Create a room to open it for booking. Its slots are generated when a date is first viewed."
+  >
+    <button type="button" class="btn btn-primary" (click)="openForm()">
+      <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>Create a room
+    </button>
+  </app-empty-state>
+}

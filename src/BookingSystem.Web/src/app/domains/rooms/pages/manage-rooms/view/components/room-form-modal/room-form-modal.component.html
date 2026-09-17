@@ -1,0 +1,95 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="modal-header border-0 px-4 pt-4 pb-0">
+    <div>
+      <h2 class="h5 mb-1" id="room-form-title">{{ room ? 'Edit room' : 'New room' }}</h2>
+      <p class="text-body-secondary small mb-0">
+        Hours are UTC. Slots are generated from these rules when a date is first viewed.
+      </p>
+    </div>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+
+  <div class="modal-body p-4">
+    <div class="mb-4">
+      <label class="form-label fw-medium" for="room-name">Name</label>
+      <input
+        id="room-name"
+        class="form-control"
+        autocomplete="off"
+        [maxlength]="nameMaxLength"
+        [formControlName]="controlNames.name"
+        [class.is-invalid]="form.isInvalid('name')"
+      />
+      <app-field-error [control]="form.controls.name" />
+    </div>
+
+    <div class="row g-4">
+      <div class="col-sm-4">
+        <span class="form-label fw-medium d-block" id="room-opens-label">Opens (UTC)</span>
+        <ngb-timepicker
+          aria-labelledby="room-opens-label"
+          [formControlName]="controlNames.opensAtUtc"
+          [spinners]="false"
+          [minuteStep]="5"
+        />
+        <app-field-error [control]="form.controls.opensAtUtc" />
+      </div>
+      <div class="col-sm-4">
+        <span class="form-label fw-medium d-block" id="room-closes-label">Closes (UTC)</span>
+        <ngb-timepicker
+          aria-labelledby="room-closes-label"
+          [formControlName]="controlNames.closesAtUtc"
+          [spinners]="false"
+          [minuteStep]="5"
+        />
+        <app-field-error [control]="form.controls.closesAtUtc" />
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label fw-medium" for="room-slot-length">Slot length</label>
+        <select
+          id="room-slot-length"
+          class="form-select"
+          [formControlName]="controlNames.slotLengthMinutes"
+          [class.is-invalid]="form.isInvalid('slotLengthMinutes')"
+        >
+          @for (option of slotLengthOptions; track option.value) {
+            <option [ngValue]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        <app-field-error [control]="form.controls.slotLengthMinutes" />
+      </div>
+    </div>
+
+    @if (form.hoursError; as hoursError) {
+      <div class="invalid-feedback d-block mt-2">{{ hoursError }}</div>
+    }
+
+    @if (room) {
+      <div class="form-text mt-3">
+        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+        Changing hours keeps existing bookings. Slot length can change only while the room has no
+        future bookings.
+      </div>
+    }
+  </div>
+
+  <div class="modal-footer border-0 px-4 pb-4 pt-0 d-block">
+    @if (facade.$saveError(); as saveError) {
+      <div class="alert alert-warning d-flex gap-2 align-items-start small py-2" role="alert">
+        <i class="bi bi-exclamation-triangle mt-1" aria-hidden="true"></i>
+        <span>{{ saveError }}</span>
+      </div>
+    }
+    <div class="d-flex justify-content-end gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">
+        Cancel
+      </button>
+      <button type="submit" class="btn btn-primary" [disabled]="form.invalid || facade.$saving()">
+        @if (facade.$saving()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        {{ room ? 'Save changes' : 'Create room' }}
+      </button>
+    </div>
+  </div>
+</form>
