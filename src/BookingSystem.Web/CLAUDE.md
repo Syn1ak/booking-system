@@ -126,7 +126,7 @@ above are the committed summary. Read the long form before you:
 4. Component `.scss` only for genuinely component-specific styles.
 
 Never hard-code colours: use Bootstrap's CSS variables (`var(--bs-primary)`,
-`var(--bs-border-color)`) so light and dark mode both work. Theme variables live in
+`var(--bs-border-color)`) so the palette stays in one place. The app is light-only. Theme variables live in
 `src/styles/_variables.scss`. Anything animated sits under
 `@media (prefers-reduced-motion: no-preference)`. State is never shown by colour alone —
 pair it with an icon or text.

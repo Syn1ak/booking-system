@@ -36,21 +36,6 @@
 
       <div class="d-flex align-items-center gap-2 pb-3 pb-lg-0">
         <ng-content />
-        <button
-          type="button"
-          class="btn btn-link text-body-secondary px-2"
-          [ngbTooltip]="colorMode.$current() === 'dark' ? 'Light mode' : 'Dark mode'"
-          [attr.aria-label]="
-            colorMode.$current() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-          "
-          (click)="colorMode.toggle()"
-        >
-          <i
-            class="bi fs-5"
-            [class]="colorMode.$current() === 'dark' ? 'bi-sun' : 'bi-moon-stars'"
-            aria-hidden="true"
-          ></i>
-        </button>
         @if (session.$user(); as user) {
           <app-user-menu [user]="user" (signOut)="session.logout()" />
         }
