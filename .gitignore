@@ -5,6 +5,9 @@
 
 docs/
 
+# SPA build output, produced by src/BookingSystem.Web
+src/BookingSystem.Api/wwwroot/
+
 # dotenv files
 .env
 

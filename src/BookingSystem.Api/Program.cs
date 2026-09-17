@@ -61,10 +61,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapEndpoints();
 app.MapHub<ScheduleHub>(ScheduleHub.Path);
+
+// Client-side routes fall back to the SPA, but API and hub paths never do: an unmatched API
+// route answered with index.html is a 200 the client cannot parse, not an honest 404.
+app.MapFallbackToFile("{*path:regex(^(?!(api|hub)(/|$)).*$)}", "index.html");
 
 app.Run();
