@@ -68,7 +68,8 @@ style guide: constants → injected → inputs/outputs/queries → signals → p
 ```
 src/app/
   core/          headless: entities (DTOs), services/api clients, session, realtime hub client,
-                 notifications, errors, guards, interceptors, utils (form, date), core.provider.ts
+                 notifications, errors, guards, interceptors, utils (form, date), providers
+                 (ng-bootstrap adapters), core.provider.ts
   layout/        main-layout (navbar, user menu, connection indicator, toasts), auth-layout
   domains/
     auth/        pages: login, register
@@ -77,6 +78,11 @@ src/app/
   shared/ui/     page-header, empty-state, skeleton, confirm-dialog, pipes
 src/styles/      Bootstrap theme and project partials
 ```
+
+**Gotcha:** provide ng-bootstrap adapters (such as `IsoDateAdapter`) on the component that uses
+the widget, not in `core.provider.ts`. Registering one app-wide pulled the whole datepicker into
+the initial bundle. For the same reason `@microsoft/signalr` is imported lazily by the hub
+connection factory; keep value imports of it out of eagerly loaded files.
 
 Admin is a capability, not a domain: manage-rooms sits in `rooms`, all-bookings in `bookings`,
 mirroring `Features/Rooms` and `Features/Bookings` on the server.
