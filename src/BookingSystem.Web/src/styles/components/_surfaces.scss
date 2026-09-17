@@ -51,6 +51,12 @@
     color: var(--bs-secondary-color);
     border-bottom-width: 1px;
     white-space: nowrap;
+
+    .btn {
+      font: inherit;
+      text-transform: inherit;
+      letter-spacing: inherit;
+    }
   }
 
   > tbody td {

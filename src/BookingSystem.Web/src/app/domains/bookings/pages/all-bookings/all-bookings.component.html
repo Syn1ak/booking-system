@@ -1,0 +1,130 @@
+<app-page-header
+  title="All bookings"
+  subtitle="Every user's bookings across all rooms, including cancelled ones."
+  icon="journal-text"
+/>
+
+<section class="card mb-4" aria-label="Filters">
+  <div class="card-body">
+    <app-bookings-filters [form]="filters" [rooms]="facade.$rooms()" />
+  </div>
+</section>
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+  <div class="d-flex flex-wrap gap-2" aria-live="polite">
+    <span class="badge bg-body-secondary text-body py-2 px-3">{{ facade.$total() }} bookings</span>
+    <span class="badge bg-primary-subtle text-primary-emphasis py-2 px-3"
+      >{{ facade.$liveCount() }} live</span
+    >
+  </div>
+  @if (facade.$loading() && facade.$total()) {
+    <span class="small text-body-secondary">
+      <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Updating…
+    </span>
+  }
+</div>
+
+@if (facade.$loading() && !facade.$total()) {
+  <div class="card">
+    <div class="card-body d-flex flex-column gap-3" aria-busy="true">
+      @for (placeholder of placeholders; track placeholder) {
+        <app-skeleton height="1.75rem" />
+      }
+    </div>
+  </div>
+} @else if (facade.$total()) {
+  <div class="card overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-app table-hover align-middle">
+        <thead>
+          <tr>
+            @for (column of columns; track column.key) {
+              <th
+                scope="col"
+                [attr.aria-sort]="
+                  facade.$sort().key === column.key
+                    ? facade.$sort().direction === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none'
+                "
+              >
+                <button
+                  type="button"
+                  class="btn btn-link p-0 text-reset text-decoration-none d-inline-flex align-items-center gap-1"
+                  (click)="facade.sortBy(column.key)"
+                >
+                  {{ column.label }}
+                  @if (facade.$sort().key === column.key) {
+                    <i
+                      class="bi"
+                      [class]="facade.$sort().direction === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down'"
+                      aria-hidden="true"
+                    ></i>
+                  }
+                </button>
+              </th>
+            }
+            <th scope="col">Status</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (view of facade.$pageItems(); track view.booking.bookingId) {
+            <tr>
+              <td class="text-nowrap">
+                <div class="fw-semibold">{{ view.booking.startsAtUtc | utcDate: 'medium' }}</div>
+                <div class="small text-body-secondary">
+                  {{ view.booking.startsAtUtc | utcTime }}–{{ view.booking.endsAtUtc | utcTime }}
+                  UTC
+                </div>
+              </td>
+              <td>{{ view.booking.roomName }}</td>
+              <td class="text-break">{{ view.booking.userEmail ?? '—' }}</td>
+              <td class="small text-body-secondary text-nowrap">
+                {{ view.booking.createdAtUtc | utcDate: 'short' }},
+                {{ view.booking.createdAtUtc | utcTime }}
+              </td>
+              <td><app-booking-status-badge [status]="view.status" /></td>
+              <td class="text-end">
+                @if (view.status === 'upcoming' && session.can('canCancelAnyBooking')) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    [disabled]="view.pending"
+                    (click)="confirmCancel(view)"
+                  >
+                    @if (view.pending) {
+                      <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    }
+                    Cancel
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (facade.$total() > facade.pageSize) {
+      <div class="card-footer bg-transparent d-flex justify-content-end py-3">
+        <ngb-pagination
+          class="mb-0"
+          size="sm"
+          [collectionSize]="facade.$total()"
+          [pageSize]="facade.pageSize"
+          [page]="facade.$page()"
+          [maxSize]="5"
+          [rotate]="true"
+          (pageChange)="facade.goToPage($event)"
+        />
+      </div>
+    }
+  </div>
+} @else {
+  <app-empty-state
+    icon="journal-x"
+    title="No bookings match"
+    message="Try a wider date range, another room, or include cancelled bookings."
+  />
+}

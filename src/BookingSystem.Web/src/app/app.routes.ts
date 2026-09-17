@@ -28,6 +28,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./domains/rooms/pages/manage-rooms/manage-rooms.routes').then((r) => r.ROUTES),
       },
+      {
+        path: 'manage/bookings',
+        loadChildren: () =>
+          import('./domains/bookings/pages/all-bookings/all-bookings.routes').then((r) => r.ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: 'rooms' },
