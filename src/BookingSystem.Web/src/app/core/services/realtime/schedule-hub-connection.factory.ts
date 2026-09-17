@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import type { HubConnection } from '@microsoft/signalr';
-import { SCHEDULE_HUB } from '../../entities/realtime/schedule-hub.contract';
+import { SCHEDULE_HUB } from '../../entities/realtime/schedule-hub.constant';
 
 export type TScheduleHubConnectionFactory = (accessToken: () => string) => Promise<HubConnection>;
 

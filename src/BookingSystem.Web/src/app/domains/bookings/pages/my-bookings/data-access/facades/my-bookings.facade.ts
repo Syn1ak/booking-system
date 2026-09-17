@@ -2,7 +2,7 @@ import { HttpStatusCode } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { finalize, forkJoin } from 'rxjs';
 import { IMyBooking } from '../../../../../../core/entities/bookings/my-booking.dto';
-import { injectHandleErrors } from '../../../../../../core/errors/handle-errors';
+import { injectHandleErrors } from '../../../../../../core/errors/handle-errors.util';
 import { BookingsClient } from '../../../../../../core/services/api/bookings/bookings.client';
 import { RoomsClient } from '../../../../../../core/services/api/rooms/rooms.client';
 import { ToastService } from '../../../../../../core/services/notifications/toast.service';

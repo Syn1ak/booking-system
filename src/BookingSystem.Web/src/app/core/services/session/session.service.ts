@@ -22,13 +22,25 @@ export class SessionService {
 
   private readonly $session = signal<TSession | null>(null);
   private readonly signedOutSubject = new Subject<void>();
-  private expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
   readonly $token = computed(() => this.$session()?.token ?? null);
   readonly $user = computed(() => this.$session()?.user ?? null);
   readonly $isAuthenticated = computed(() => this.$session() !== null);
+  readonly $capabilities = computed(() => {
+    const roles: readonly string[] = this.$session()?.user.roles ?? [];
+    const entries = Object.entries(CAPABILITY_ROLES) as [TCapability, readonly Role[]][];
+
+    return Object.fromEntries(
+      entries.map(([capability, allowed]) => [
+        capability,
+        allowed.some((role) => roles.includes(role)),
+      ]),
+    ) as Record<TCapability, boolean>;
+  });
 
   readonly signedOut$ = this.signedOutSubject.asObservable();
+
+  private expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
   login$(request: ILoginRequest): Observable<ICurrentUser> {
     return this.authClient
@@ -43,8 +55,7 @@ export class SessionService {
   }
 
   can(capability: TCapability): boolean {
-    const roles: readonly Role[] = CAPABILITY_ROLES[capability];
-    return roles.some((role) => this.hasRole(role));
+    return this.$capabilities()[capability];
   }
 
   logout(): void {
@@ -78,9 +89,5 @@ export class SessionService {
     clearTimeout(this.expiryTimer);
     this.$session.set(null);
     this.signedOutSubject.next();
-  }
-
-  private hasRole(role: Role): boolean {
-    return this.$session()?.user.roles.includes(role) ?? false;
   }
 }

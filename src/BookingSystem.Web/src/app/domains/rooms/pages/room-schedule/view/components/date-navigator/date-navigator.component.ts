@@ -79,13 +79,16 @@ export class DateNavigatorComponent {
 
   readonly $selected = computed(() => toDateParts(this.$date()));
   readonly $min = computed(() => toDateParts(this.$today()));
-  readonly $max = computed(() =>
-    toDateParts(this.$lastBookableDate() ?? addDays(this.$today(), DAYS_SHOWN_WITHOUT_WINDOW)),
-  );
+  readonly $max = computed(() => {
+    const last = this.$lastBookableDate();
+    const today = this.$today();
+    return toDateParts(last ?? addDays(today, DAYS_SHOWN_WITHOUT_WINDOW));
+  });
   readonly $canGoBack = computed(() => this.$date() > this.$today());
   readonly $canGoForward = computed(() => {
     const last = this.$lastBookableDate();
-    return !last || this.$date() < last;
+    const date = this.$date();
+    return !last || date < last;
   });
 
   readonly isOutsideWindow = (date: NgbDateStruct): boolean => {

@@ -18,10 +18,8 @@ export class HeaderComponent {
 
   readonly $menuOpen = signal(false);
   readonly $links = computed(() => {
-    const signedIn = this.session.$user();
-    return NAV_LINKS.filter(
-      (link) => signedIn && (!link.capability || this.session.can(link.capability)),
-    );
+    const capabilities = this.session.$capabilities();
+    return NAV_LINKS.filter((link) => !link.capability || capabilities[link.capability]);
   });
 
   closeMenu(): void {

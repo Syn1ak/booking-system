@@ -1,7 +1,7 @@
 import { AbstractControl, FormControl, ValidationErrors, Validators } from '@angular/forms';
 import { IRegisterRequest } from '../../../../../core/entities/auth/register.dto';
 import { ControlsOf } from '../../../../../core/utils/form/controls-of.util';
-import { FormHandler } from '../../../../../core/utils/form/form-handler';
+import { FormHandler } from '../../../../../core/utils/form/form-handler.abstraction';
 import { getFormControlsNames } from '../../../../../core/utils/form/get-form-controls-names.util';
 
 export type TRegisterForm = {

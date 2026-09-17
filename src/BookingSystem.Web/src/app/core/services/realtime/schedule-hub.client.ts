@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import type { HubConnection } from '@microsoft/signalr';
 import { defer, Observable, Subject } from 'rxjs';
-import { SCHEDULE_HUB } from '../../entities/realtime/schedule-hub.contract';
+import { SCHEDULE_HUB } from '../../entities/realtime/schedule-hub.constant';
 import { ISlotChange } from '../../entities/realtime/slot-change.dto';
 import { THubState } from '../../models/realtime/hub-state.types';
 import { SessionService } from '../session/session.service';
@@ -32,17 +32,17 @@ export class ScheduleHubClient {
   private readonly scheduleResetSubject = new Subject<string>();
   private readonly reconnectedSubject = new Subject<void>();
 
-  private connection: Promise<HubConnection> | null = null;
-  private starting: Promise<void> | null = null;
-  private restartTimer: ReturnType<typeof setTimeout> | undefined;
-  private stopping = false;
-
   readonly $state = this.$stateSignal.asReadonly();
   readonly $isWatching = computed(() => this.$watchedRooms().size > 0);
 
   readonly slotChanged$ = this.slotChangedSubject.asObservable();
   readonly scheduleReset$ = this.scheduleResetSubject.asObservable();
   readonly reconnected$ = this.reconnectedSubject.asObservable();
+
+  private connection: Promise<HubConnection> | null = null;
+  private starting: Promise<void> | null = null;
+  private restartTimer: ReturnType<typeof setTimeout> | undefined;
+  private stopping = false;
 
   constructor() {
     this.session.signedOut$.subscribe(() => void this.stop());

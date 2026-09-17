@@ -6,7 +6,7 @@ import { filter, finalize, interval, of, Subject, switchMap, tap, timeout } from
 import { IRoom } from '../../../../../../core/entities/rooms/room.dto';
 import { IRoomSchedule, ISlot } from '../../../../../../core/entities/rooms/room-schedule.dto';
 import { ISlotChange } from '../../../../../../core/entities/realtime/slot-change.dto';
-import { injectHandleErrors } from '../../../../../../core/errors/handle-errors';
+import { injectHandleErrors } from '../../../../../../core/errors/handle-errors.util';
 import { BookingsClient } from '../../../../../../core/services/api/bookings/bookings.client';
 import { RoomsClient } from '../../../../../../core/services/api/rooms/rooms.client';
 import { ToastService } from '../../../../../../core/services/notifications/toast.service';
@@ -51,13 +51,16 @@ export class RoomScheduleFacade {
   private readonly $now = signal(new Date());
 
   private readonly load$ = new Subject<void>();
-  private bufferedChanges: ISlotChange[] = [];
 
   readonly $room = this.$roomState.asReadonly();
   readonly $date = this.$dateState.asReadonly();
   readonly $lastBookableDate = this.$lastBookableDateState.asReadonly();
   readonly $today = computed(() => todayUtc(this.$now()));
-  readonly $loading = computed(() => this.$inFlight() > 0 && this.$slotsState().length === 0);
+  readonly $loading = computed(() => {
+    const inFlight = this.$inFlight();
+    const slots = this.$slotsState();
+    return inFlight > 0 && slots.length === 0;
+  });
   readonly $refreshing = computed(() => this.$inFlight() > 0);
 
   readonly $slots = computed<TSlotView[]>(() => {
@@ -79,6 +82,8 @@ export class RoomScheduleFacade {
   readonly $mineCount = computed(
     () => this.$slots().filter((view) => view.status === 'mine').length,
   );
+
+  private bufferedChanges: ISlotChange[] = [];
 
   constructor() {
     this.load$

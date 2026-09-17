@@ -2,7 +2,8 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, EMPTY, MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { ToastService } from '../services/notifications/toast.service';
-import { IProblemDetails, toProblemDetails } from './problem-details';
+import { IProblemDetails } from './problem-details.types';
+import { toProblemDetails } from './problem-details.util';
 
 export type TErrorHandlers = Partial<Record<number | '*', (problem: IProblemDetails) => void>>;
 

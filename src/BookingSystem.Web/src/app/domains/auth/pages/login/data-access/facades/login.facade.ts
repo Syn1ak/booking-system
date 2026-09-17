@@ -3,7 +3,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ILoginRequest } from '../../../../../../core/entities/auth/login.dto';
-import { injectHandleErrors } from '../../../../../../core/errors/handle-errors';
+import { injectHandleErrors } from '../../../../../../core/errors/handle-errors.util';
 import { SessionService } from '../../../../../../core/services/session/session.service';
 import { safeReturnUrl } from '../../../../../../core/utils/navigation/safe-return-url.util';
 

@@ -1,7 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 import { IRoom } from '../../../../../../core/entities/rooms/room.dto';
-import { injectHandleErrors } from '../../../../../../core/errors/handle-errors';
+import { injectHandleErrors } from '../../../../../../core/errors/handle-errors.util';
 import { RoomsClient } from '../../../../../../core/services/api/rooms/rooms.client';
 
 @Injectable()

@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, throwError, toArray } from 'rxjs';
 import { ToastService } from '../services/notifications/toast.service';
-import { injectHandleErrors } from './handle-errors';
+import { injectHandleErrors } from './handle-errors.util';
 
 describe('injectHandleErrors', () => {
   const fail = (status: number, body: unknown = null) =>

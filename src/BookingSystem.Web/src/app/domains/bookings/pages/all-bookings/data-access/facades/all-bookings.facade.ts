@@ -5,7 +5,7 @@ import { finalize, Subject, switchMap } from 'rxjs';
 import { IAdminBooking } from '../../../../../../core/entities/bookings/admin-booking.dto';
 import { IAdminBookingsCriteria } from '../../../../../../core/entities/bookings/admin-bookings.criteria';
 import { IRoom } from '../../../../../../core/entities/rooms/room.dto';
-import { injectHandleErrors } from '../../../../../../core/errors/handle-errors';
+import { injectHandleErrors } from '../../../../../../core/errors/handle-errors.util';
 import { BookingsClient } from '../../../../../../core/services/api/bookings/bookings.client';
 import { RoomsClient } from '../../../../../../core/services/api/rooms/rooms.client';
 import { ToastService } from '../../../../../../core/services/notifications/toast.service';

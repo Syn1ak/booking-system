@@ -1,5 +1,5 @@
 import { FormGroup } from '@angular/forms';
-import { IValidationProblemDetails } from '../../errors/problem-details';
+import { IValidationProblemDetails } from '../../errors/problem-details.types';
 
 export const SERVER_ERROR_KEY = 'server';
 

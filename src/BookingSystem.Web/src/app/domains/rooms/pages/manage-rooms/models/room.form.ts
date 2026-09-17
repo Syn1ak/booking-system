@@ -3,7 +3,7 @@ import { NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { IRoom, IRoomRequest } from '../../../../../core/entities/rooms/room.dto';
 import { SlotLength } from '../../../../../core/entities/rooms/slot-length.enum';
 import { ControlsOf } from '../../../../../core/utils/form/controls-of.util';
-import { FormHandler } from '../../../../../core/utils/form/form-handler';
+import { FormHandler } from '../../../../../core/utils/form/form-handler.abstraction';
 import { getFormControlsNames } from '../../../../../core/utils/form/get-form-controls-names.util';
 import { minutesOfDay } from '../../../utils/room-hours.util';
 
