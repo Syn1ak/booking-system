@@ -100,10 +100,31 @@ it. The rules are the single definition of the grid and nothing else may compute
 ## Changing a room's rules: hours regenerate, slot length is restricted
 
 **Opening and closing times may be changed at any time.** Every future slot row for that room
-that has no live booking is deleted, and nothing is regenerated eagerly — the next read rebuilds
+that has no live booking is retired, and nothing is regenerated eagerly — the next read rebuilds
 from the new rules. Future slots that *are* booked are left exactly as they are and continue to
 display. Nobody's meeting moves or disappears, and the schedule shows the old and new grids
 side by side until those bookings pass or are cancelled.
+
+**Retired, not deleted.** This section originally said *deleted*, and that was wrong: a slot with
+no live booking can still carry cancelled ones, because cancellation keeps the booking row as
+history. The restricting foreign key from bookings refuses to orphan them, so the first hours
+change on a room with a cancelled future booking failed with a server error. A retired slot keeps
+its row, gains `RetiredAtUtc`, and drops out of the grid: the schedule read and booking ignore it,
+while booking history still joins to it for its room and time.
+
+The alternatives each break something recorded elsewhere. Deleting the cancelled bookings with
+the slot destroys the admin history that is the reason cancellation keeps the row. A nullable or
+cascading foreign key leaves a booking that no longer knows when or where it was, since a booking
+holds no times of its own. Deleting only the slots nobody ever booked leaves the old grid's
+history-bearing rows active, so a free slot outside the new hours stays bookable.
+
+The unique index on room and start time is filtered to active slots, so the replacement grid
+can reuse a moment a retired row still names. Retiring is an update, so it moves the slot's
+rowversion: a claim racing an hours change fails its concurrency token and answers 404 — the slot
+left the grid, nobody won it — rather than landing on a row that is no longer part of it.
+
+**Accepted trade-off:** retired rows accumulate — at most one grid's worth of future rows per
+change of rules, which is negligible at the rate an admin edits a room.
 
 **Slot length may be changed only while the room has no future bookings**, and the request is
 refused with a conflict otherwise, naming how many bookings stand in the way. This is the one
@@ -114,7 +135,7 @@ true.
 
 ## Losing a race to generate a slot is a success
 
-A unique index on the slot's room and start time makes duplicate rows impossible. Without it,
+A unique index on the slot's room and start time makes duplicate active rows impossible. Without it,
 two concurrent first reads of the same date, two instances running the same top-up, or a
 re-run after a partial failure each produce two rows for one moment in time — and two people
 then book "the same" slot legally, each against a different row. That would defeat the booking

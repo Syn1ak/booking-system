@@ -19,6 +19,12 @@ public sealed class Slot
     /// </summary>
     public Guid? CurrentBookingId { get; set; }
 
+    /// <summary>
+    /// Set when a change to the room's rules takes this slot out of the grid. The row is kept
+    /// rather than deleted because cancelled bookings still reference it as history.
+    /// </summary>
+    public DateTime? RetiredAtUtc { get; set; }
+
     /// <summary>Changes on every write, making a claim a version-checked update.</summary>
     public byte[] Version { get; set; } = [];
 }

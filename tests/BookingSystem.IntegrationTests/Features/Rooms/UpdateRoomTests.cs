@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using BookingSystem.Api.Features.Bookings;
 using BookingSystem.Api.Features.Rooms;
 using BookingSystem.IntegrationTests.Fixtures;
 
@@ -145,6 +146,76 @@ public sealed class UpdateRoomTests(ApiFactory factory)
         Assert.NotNull(unchanged);
         Assert.Equal(60, unchanged.SlotLengthMinutes);
         Assert.Equal(room.Name, unchanged.Name);
+    }
+
+    [Fact]
+    public async Task Update_WhenHoursChange_AfterABookingWasCancelled_RebuildsTheGridAndKeepsTheHistory()
+    {
+        var room = await factory.CreateRoomAsync();
+        var date = BookingData.Tomorrow;
+        var user = await factory.CreateUserClientAsync();
+        var admin = await factory.CreateAdminClientAsync();
+
+        var booking = await user.BookFirstFreeSlotAsync(room.Id, date);
+        (await user.CancelAsync(booking.BookingId)).EnsureSuccessStatusCode();
+
+        var response = await admin.PutAsJsonAsync($"/api/rooms/{room.Id}", NarrowerHours);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var after = await user.ReadScheduleAsync(room.Id, date);
+        Assert.Equal(4, after.Slots.Length);
+        Assert.Equal(date.ToDateTime(new TimeOnly(10, 0)), after.Slots[0].StartsAtUtc);
+
+        // Cancelling keeps the row so admins can still read it; changing hours must not lose it.
+        var history = await admin.GetFromJsonAsync<ListAllBookings.Response[]>(
+            $"/api/admin/bookings?roomId={room.Id}");
+        Assert.NotNull(history);
+        var cancelled = Assert.Single(history);
+        Assert.Equal(booking.BookingId, cancelled.BookingId);
+        Assert.Equal(booking.StartsAtUtc, cancelled.StartsAtUtc);
+        Assert.NotNull(cancelled.CancelledAtUtc);
+    }
+
+    [Fact]
+    public async Task Update_WithANewSlotLength_WhenOnlyCancelledBookingsRemain_RebuildsTheGrid()
+    {
+        var room = await factory.CreateRoomAsync();
+        var date = BookingData.Tomorrow;
+        var user = await factory.CreateUserClientAsync();
+        var admin = await factory.CreateAdminClientAsync();
+
+        var booking = await user.BookFirstFreeSlotAsync(room.Id, date);
+        (await user.CancelAsync(booking.BookingId)).EnsureSuccessStatusCode();
+
+        var response = await admin.PutAsJsonAsync($"/api/rooms/{room.Id}", new
+        {
+            name = "Board room",
+            opensAtUtc = "09:00:00",
+            closesAtUtc = "17:00:00",
+            slotLengthMinutes = 30,
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(16, (await user.ReadScheduleAsync(room.Id, date)).Slots.Length);
+    }
+
+    [Fact]
+    public async Task Book_ASlotRetiredByAnHoursChange_Returns404()
+    {
+        var room = await factory.CreateRoomAsync();
+        var date = BookingData.Tomorrow;
+        var user = await factory.CreateUserClientAsync();
+        var admin = await factory.CreateAdminClientAsync();
+
+        var booking = await user.BookFirstFreeSlotAsync(room.Id, date);
+        (await user.CancelAsync(booking.BookingId)).EnsureSuccessStatusCode();
+        (await admin.PutAsJsonAsync($"/api/rooms/{room.Id}", NarrowerHours)).EnsureSuccessStatusCode();
+
+        // The 09:00 row survives only as the cancelled booking's history; it is not bookable.
+        var response = await user.BookAsync(booking.SlotId);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(0, await factory.CountLiveBookingsAsync(booking.SlotId));
     }
 
     private static string Schedule(Guid roomId, DateOnly date) =>

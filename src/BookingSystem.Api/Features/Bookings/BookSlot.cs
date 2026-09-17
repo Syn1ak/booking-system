@@ -65,7 +65,7 @@ public sealed class BookSlot : IEndpoint
         var userId = principal.UserId();
 
         var slot = await database.Slots
-            .Where(candidate => candidate.Id == request.SlotId)
+            .Where(candidate => candidate.Id == request.SlotId && candidate.RetiredAtUtc == null)
             .Where(candidate => database.Rooms.Any(room => room.Id == candidate.RoomId && room.IsActive))
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -118,6 +118,13 @@ public sealed class BookSlot : IEndpoint
             var claimed = await database.Slots
                 .AsNoTracking()
                 .SingleAsync(candidate => candidate.Id == slot.Id, cancellationToken);
+
+            // The room's hours changed between the read and the claim, and this slot left the
+            // grid. Nobody won it, so this is not a conflict.
+            if (claimed.RetiredAtUtc is not null)
+            {
+                return Results.NotFound();
+            }
 
             return await AnswerClaimedSlotAsync(database, claimed, userId, cancellationToken);
         }

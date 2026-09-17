@@ -34,7 +34,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             // re-run after a partial failure - produce two rows for the same moment, and two
             // people then book "the same" slot legally against different rows. The booking
             // code cannot close that door; this index is what closes it.
-            slot.HasIndex(s => new { s.RoomId, s.StartsAtUtc }).IsUnique();
+            //
+            // Filtered to active slots: a retired row keeps its start time as history, and the
+            // grid that replaces it needs the same moment.
+            slot.HasIndex(s => new { s.RoomId, s.StartsAtUtc })
+                .IsUnique()
+                .HasFilter("[RetiredAtUtc] IS NULL");
 
             slot.Property(s => s.Version).IsRowVersion();
 

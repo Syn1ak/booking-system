@@ -86,6 +86,7 @@ public sealed class SlotGenerator(
         Task<List<Slot>> ReadAsync() => database.Slots
             .AsNoTracking()
             .Where(slot => slot.RoomId == room.Id
+                           && slot.RetiredAtUtc == null
                            && slot.StartsAtUtc >= dayStartUtc
                            && slot.StartsAtUtc < dayEndUtc)
             .OrderBy(slot => slot.StartsAtUtc)

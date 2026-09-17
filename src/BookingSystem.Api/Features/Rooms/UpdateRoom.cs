@@ -123,14 +123,18 @@ public sealed class UpdateRoom : IEndpoint
         // rows and keep displaying, so the schedule shows the old and new grids side by side
         // until those bookings pass or are cancelled.
         //
-        // Dropping the claim check does not corrupt anything - the restricting foreign key from
-        // Bookings fails the delete instead - but it turns an hours change into a 500 for any
-        // room with a future booking.
+        // Retired, not deleted: a free slot may still be referenced by cancelled bookings, whose
+        // history the restricting foreign key rightly refuses to orphan. Retiring also moves the
+        // rowversion, so a claim racing this change fails its token instead of landing on a row
+        // that has left the grid.
         await database.Slots
             .Where(slot => slot.RoomId == room.Id
+                           && slot.RetiredAtUtc == null
                            && slot.StartsAtUtc > now
                            && slot.CurrentBookingId == null)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(slot => slot.RetiredAtUtc, now),
+                cancellationToken);
 
         await database.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
