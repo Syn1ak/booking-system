@@ -11,6 +11,27 @@ response.
 
 Design decisions are recorded in [CLAUDE.md](CLAUDE.md) and the files it links to.
 
+## Live demo
+
+**https://booking-sashasyniak-d2e4fyexgydhcfh6.swedencentral-01.azurewebsites.net**
+
+Sign in with the buttons under the login form, or type the credentials:
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@example.com` | `Admin123!` |
+| User | `user@example.com` | `User123!` |
+
+These are the same demo accounts as local development, and they are deliberately public - the
+deployed instance is a demo, so treat anything in it as public too.
+
+To see the real-time updates, open the same room and date in two browsers, sign in as each
+account, and book a slot in one: the other updates within a second, without a reload.
+
+Hosted on Azure free tiers, which shapes two behaviours worth knowing about: the App Service
+plan sleeps after about 20 minutes idle and the SQL database auto-pauses, so the **first request
+after a quiet period takes 30-90 seconds** - reload if it times out. Afterwards it is quick.
+
 ## Prerequisites
 
 - .NET 10 SDK
