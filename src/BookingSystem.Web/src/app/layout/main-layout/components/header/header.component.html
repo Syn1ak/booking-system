@@ -1,0 +1,60 @@
+<nav class="app-navbar navbar navbar-expand-lg" aria-label="Main">
+  <div class="container">
+    <a class="app-brand me-4" routerLink="/rooms" (click)="closeMenu()">
+      <span class="app-brand-mark" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>
+      RoomBook
+    </a>
+
+    <button
+      type="button"
+      class="navbar-toggler border-0 shadow-none"
+      aria-controls="main-navigation"
+      [attr.aria-expanded]="$menuOpen()"
+      aria-label="Toggle navigation"
+      (click)="$menuOpen.set(!$menuOpen())"
+    >
+      <i class="bi" [class]="$menuOpen() ? 'bi-x-lg' : 'bi-list'" aria-hidden="true"></i>
+    </button>
+
+    <div id="main-navigation" class="navbar-collapse" [ngbCollapse]="!$menuOpen()">
+      <ul class="navbar-nav me-auto gap-1 py-3 py-lg-0">
+        @for (link of $links(); track link.path) {
+          <li class="nav-item">
+            <a
+              class="nav-link app-nav-link d-flex align-items-center gap-2"
+              [routerLink]="link.path"
+              routerLinkActive="active"
+              ariaCurrentWhenActive="page"
+              (click)="closeMenu()"
+            >
+              <i class="bi" [class]="'bi-' + link.icon" aria-hidden="true"></i>
+              {{ link.label }}
+            </a>
+          </li>
+        }
+      </ul>
+
+      <div class="d-flex align-items-center gap-2 pb-3 pb-lg-0">
+        <ng-content />
+        <button
+          type="button"
+          class="btn btn-link text-body-secondary px-2"
+          [ngbTooltip]="colorMode.$current() === 'dark' ? 'Light mode' : 'Dark mode'"
+          [attr.aria-label]="
+            colorMode.$current() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+          "
+          (click)="colorMode.toggle()"
+        >
+          <i
+            class="bi fs-5"
+            [class]="colorMode.$current() === 'dark' ? 'bi-sun' : 'bi-moon-stars'"
+            aria-hidden="true"
+          ></i>
+        </button>
+        @if (session.$user(); as user) {
+          <app-user-menu [user]="user" (signOut)="session.logout()" />
+        }
+      </div>
+    </div>
+  </div>
+</nav>
