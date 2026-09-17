@@ -50,7 +50,7 @@ describe('ScheduleHubClient', () => {
         },
         {
           provide: SCHEDULE_HUB_CONNECTION_FACTORY,
-          useValue: () => connection as unknown as HubConnection,
+          useValue: async () => connection as unknown as HubConnection,
         },
       ],
     });

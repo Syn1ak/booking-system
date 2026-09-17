@@ -1,5 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { HubConnection, HubConnectionState } from '@microsoft/signalr';
+import type { HubConnection } from '@microsoft/signalr';
 import { defer, Observable, Subject } from 'rxjs';
 import { SCHEDULE_HUB } from '../../entities/realtime/schedule-hub.contract';
 import { ISlotChange } from '../../entities/realtime/slot-change.dto';
@@ -8,6 +8,9 @@ import { SessionService } from '../session/session.service';
 import { SCHEDULE_HUB_CONNECTION_FACTORY } from './schedule-hub-connection.factory';
 
 const RESTART_DELAY_MS = 5_000;
+
+const isConnected = (connection: HubConnection) => connection.state === 'Connected';
+const isDisconnected = (connection: HubConnection) => connection.state === 'Disconnected';
 
 /**
  * Owns the one connection to the schedule hub and which rooms it watches. It never throws at a
@@ -29,7 +32,7 @@ export class ScheduleHubClient {
   private readonly scheduleResetSubject = new Subject<string>();
   private readonly reconnectedSubject = new Subject<void>();
 
-  private connection: HubConnection | null = null;
+  private connection: Promise<HubConnection> | null = null;
   private starting: Promise<void> | null = null;
   private restartTimer: ReturnType<typeof setTimeout> | undefined;
   private stopping = false;
@@ -63,7 +66,7 @@ export class ScheduleHubClient {
 
     const connection = await this.connect();
 
-    if (connection.state === HubConnectionState.Connected) {
+    if (isConnected(connection)) {
       await this.invoke(connection, SCHEDULE_HUB.methods.watch, roomId);
     }
   }
@@ -77,24 +80,27 @@ export class ScheduleHubClient {
 
     this.setWatchers(roomId, watchers - 1);
 
-    if (watchers === 1 && this.connection?.state === HubConnectionState.Connected) {
-      await this.invoke(this.connection, SCHEDULE_HUB.methods.unwatch, roomId);
+    const connection = await this.connection;
+
+    if (watchers === 1 && connection && isConnected(connection)) {
+      await this.invoke(connection, SCHEDULE_HUB.methods.unwatch, roomId);
     }
   }
 
   private async connect(): Promise<HubConnection> {
     this.connection ??= this.build();
+    const connection = await this.connection;
 
-    if (this.connection.state === HubConnectionState.Disconnected) {
-      this.starting ??= this.start(this.connection).finally(() => (this.starting = null));
+    if (isDisconnected(connection)) {
+      this.starting ??= this.start(connection).finally(() => (this.starting = null));
     }
 
     await this.starting;
-    return this.connection;
+    return connection;
   }
 
-  private build(): HubConnection {
-    const connection = this.createConnection(() => this.session.$token() ?? '');
+  private async build(): Promise<HubConnection> {
+    const connection = await this.createConnection(() => this.session.$token() ?? '');
 
     connection.on(SCHEDULE_HUB.events.slotChanged, (change: ISlotChange) =>
       this.slotChangedSubject.next(change),
@@ -137,7 +143,7 @@ export class ScheduleHubClient {
       this.restartTimer = undefined;
       const connection = await this.connect();
 
-      if (connection.state === HubConnectionState.Connected) {
+      if (isConnected(connection)) {
         await this.rejoin(connection);
       }
     }, RESTART_DELAY_MS);
@@ -168,7 +174,7 @@ export class ScheduleHubClient {
     this.restartTimer = undefined;
     this.$watchedRooms.set(new Map());
 
-    const connection = this.connection;
+    const connection = await this.connection;
     this.connection = null;
 
     if (connection) {
