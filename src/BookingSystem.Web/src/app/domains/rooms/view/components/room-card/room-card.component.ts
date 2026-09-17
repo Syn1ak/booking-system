@@ -45,11 +45,6 @@ import { slotsPerDay } from '../../../utils/room-hours.util';
       <ng-content select="[roomCardFooter]" />
     </article>
   `,
-  styles: `
-    .min-w-0 {
-      min-width: 0;
-    }
-  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RoomCardComponent {

@@ -19,11 +19,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       </div>
     </header>
   `,
-  styles: `
-    .min-w-0 {
-      min-width: 0;
-    }
-  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PageHeaderComponent {

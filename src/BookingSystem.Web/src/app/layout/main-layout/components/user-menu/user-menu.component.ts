@@ -13,14 +13,9 @@ import { ICurrentUser } from '../../../../core/entities/auth/current-user.dto';
         ngbDropdownToggle
         aria-label="Account menu"
       >
-        <span
-          class="rounded-circle d-inline-grid bg-primary text-white fw-semibold"
-          style="width: 2.25rem; height: 2.25rem; place-items: center"
-          aria-hidden="true"
-          >{{ $initial() }}</span
-        >
+        <span class="app-avatar" aria-hidden="true">{{ $initial() }}</span>
       </button>
-      <div ngbDropdownMenu class="shadow border-0 p-2" style="min-width: 16rem">
+      <div ngbDropdownMenu class="app-user-menu shadow border-0 p-2">
         <div class="px-2 py-2">
           <div class="fw-semibold text-truncate">{{ $user().email }}</div>
           <div class="d-flex flex-wrap gap-1 mt-2">

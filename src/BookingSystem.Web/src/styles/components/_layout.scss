@@ -11,6 +11,11 @@
   background: var(--app-navbar-bg);
   border-bottom: 1px solid var(--app-surface-border);
   backdrop-filter: saturate(180%) blur(12px);
+
+  // Collapsed, Bootstrap zeroes horizontal link padding; the active pill needs it.
+  .navbar-nav {
+    --bs-nav-link-padding-x: #{$navbar-nav-link-padding-x};
+  }
 }
 
 .app-brand {
@@ -34,13 +39,12 @@
   height: 2rem;
   border-radius: $border-radius;
   background: var(--app-brand-gradient);
-  color: #fff;
+  color: var(--bs-white);
   box-shadow: $box-shadow-sm;
 }
 
 .app-nav-link {
   border-radius: $border-radius-sm;
-  padding: 0.5rem 0.75rem !important;
   color: var(--bs-secondary-color);
   font-weight: 500;
 
@@ -54,6 +58,21 @@
     color: var(--bs-primary-text-emphasis);
     background: var(--bs-primary-bg-subtle);
   }
+}
+
+.app-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  font-weight: $font-weight-semibold;
+  color: var(--bs-white);
+  background: var(--bs-primary);
+}
+
+.app-user-menu {
+  min-width: 16rem;
 }
 
 .app-main {

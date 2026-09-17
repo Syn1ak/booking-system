@@ -10,17 +10,14 @@ import { TMyBookingView } from '../../../data-access/facades/my-bookings.facade'
   imports: [RouterLink, UtcDatePipe, UtcTimePipe, BookingStatusBadgeComponent],
   template: `
     <div class="list-group-item d-flex flex-wrap align-items-center gap-3 py-3">
-      <div
-        class="text-center rounded-3 bg-body-tertiary border px-3 py-2 flex-shrink-0"
-        style="min-width: 4.25rem"
-      >
+      <div class="date-block px-3 py-2 flex-shrink-0">
         <div class="small text-uppercase fw-semibold text-body-secondary">
           {{ $view().booking.startsAtUtc | utcDate: 'month' }}
         </div>
         <div class="fs-4 fw-bold lh-1">{{ $view().booking.startsAtUtc | utcDate: 'day' }}</div>
       </div>
 
-      <div class="flex-grow-1" style="min-width: 12rem">
+      <div class="list-item-body">
         <div class="fw-semibold">
           @if ($view().roomIsActive) {
             <a
