@@ -111,6 +111,29 @@ describe('ScheduleHubClient', () => {
     expect(hub.$state()).toBe('disconnected');
   });
 
+  it('keeps retrying after automatic reconnection gives up, then re-joins and asks for a refetch', async () => {
+    await firstValueFrom(hub.watch$('r1'), { defaultValue: undefined });
+    vi.useFakeTimers();
+    let reconnected = false;
+    hub.reconnected$.subscribe(() => (reconnected = true));
+    connection.invoke.mockClear();
+    connection.start.mockRejectedValueOnce(new Error('ERR_CONNECTION_REFUSED'));
+
+    connection.state = HubConnectionState.Disconnected;
+    connection.closed();
+    expect(hub.$state()).toBe('disconnected');
+
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(hub.$state()).toBe('disconnected');
+
+    await vi.advanceTimersByTimeAsync(5_000);
+    vi.useRealTimers();
+
+    expect(hub.$state()).toBe('connected');
+    expect(connection.invoke).toHaveBeenCalledWith('Watch', 'r1');
+    expect(reconnected).toBe(true);
+  });
+
   it('stops and forgets its rooms on sign-out', async () => {
     await firstValueFrom(hub.watch$('r1'), { defaultValue: undefined });
 
