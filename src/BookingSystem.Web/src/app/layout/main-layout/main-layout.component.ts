@@ -1,17 +1,18 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastOutletComponent } from '../components/toast-outlet/toast-outlet.component';
+import { ConnectionIndicatorComponent } from './components/connection-indicator/connection-indicator.component';
 import { HeaderComponent } from './components/header/header.component';
 
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, HeaderComponent, ToastOutletComponent],
+  imports: [RouterOutlet, HeaderComponent, ConnectionIndicatorComponent, ToastOutletComponent],
   template: `
     <div class="app-shell">
       <a class="visually-hidden-focusable position-absolute m-2 btn btn-primary" href="#content">
         Skip to content
       </a>
-      <app-header />
+      <app-header><app-connection-indicator /></app-header>
       <main id="content" class="app-main" tabindex="-1">
         <div class="container">
           <router-outlet />
